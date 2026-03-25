@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState("");
@@ -11,8 +16,19 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const login = useAuthStore(state => state.login);
+  const { user, isLoading, login } = useAuthStore();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !isLoading && user) {
+      router.push("/profile");
+    }
+  }, [mounted, isLoading, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +36,7 @@ export default function LoginPage() {
     setError(null);
     try {
       await login({ identifier, password });
-      router.push("/");
+      router.push("/profile");
     } catch (err: any) {
       setError(err.message || "Error al iniciar sesión");
     } finally {
@@ -28,66 +44,75 @@ export default function LoginPage() {
     }
   };
 
+  if (!mounted || (isLoading || user)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4">
+        <div className="w-5 h-5 rounded-full border-2 border-zinc-300 dark:border-zinc-700 border-t-zinc-900 dark:border-t-zinc-100 animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-950 px-4">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
-        <div className="absolute top-40 -left-40 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
-      </div>
-      
-      <div className="relative w-full max-w-md p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl">
-        <div className="mb-10 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Bienvenido de nuevo</h1>
-          <p className="text-zinc-400">Inicia sesión en tu cuenta para continuar</p>
-        </div>
-
-        {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center font-medium">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">Usuario o Email</label>
-            <input
-              type="text"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              className="w-full h-12 px-4 rounded-xl bg-black/50 border border-white/10 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all"
-              placeholder="tu@email.com o username"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">Contraseña</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full h-12 px-4 rounded-xl bg-black/50 border border-white/10 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all"
-              placeholder="••••••••"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full h-12 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium hover:from-purple-500 hover:to-blue-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)]"
-          >
-            {isSubmitting ? "Iniciando sesión..." : "Iniciar Sesión"}
-          </button>
-        </form>
-
-        <p className="mt-8 text-center text-sm text-zinc-400">
-          ¿No tienes una cuenta?{" "}
-          <Link href="/register" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">
-            Regístrate aquí
-          </Link>
-        </p>
-      </div>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4 relative">
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="absolute top-6 left-6 gap-2 text-zinc-500"
+        onClick={() => router.back()}
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Volver
+      </Button>
+      <Card className="w-full max-w-sm shrink-0 shadow-sm border-zinc-200 dark:border-zinc-800 mt-12 sm:mt-0">
+        <CardHeader className="space-y-1 items-center pb-6">
+          <CardTitle className="text-2xl font-semibold tracking-tight">Acceso</CardTitle>
+          <CardDescription className="text-center text-sm">
+            Ingresa tu email o usuario para continuar.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="text-sm font-medium text-red-500 bg-red-50 dark:bg-red-950/20 p-3 rounded-md border border-red-200 dark:border-red-900">
+                {error}
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="identifier">Identificador</Label>
+              <Input
+                id="identifier"
+                type="text"
+                placeholder="tu@email.com o username"
+                required
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <Button type="submit" className="w-full mt-4" disabled={isSubmitting}>
+              {isSubmitting ? "Cargando..." : "Iniciar sesión"}
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="flex flex-col border-t border-zinc-100 dark:border-zinc-800/50 pt-6">
+          <p className="text-sm text-zinc-500 text-center">
+            ¿No tienes cuenta?{" "}
+            <Link href="/register" className="text-zinc-900 dark:text-zinc-100 font-medium hover:underline underline-offset-4 pointer-events-auto">
+              Regístrate
+            </Link>
+          </p>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
