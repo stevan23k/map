@@ -1,12 +1,11 @@
-import MapHeader from "@/components/map/header";
+"use client";
 
-export default function Map() {
-    return (
-        <>
-            <MapHeader />
-            <main className="flex justify-center items-center h-screen">
-                aqui va el mapa
-            </main>
-        </>
-    )
+import DynamicMap from "@/components/map/DynamicMap";
+
+export default function MapPage() {
+  return (
+    <main className="w-screen h-screen overflow-hidden">
+      <DynamicMap className="w-full h-full" />
+    </main>
+  );
 }
