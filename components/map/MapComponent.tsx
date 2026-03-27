@@ -4,6 +4,8 @@ import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
+import { useUIStore } from "@/store/ui";
+
 const BARRANQUILLA_CENTER: [number, number] = [-74.7813, 10.9685];
 const DEFAULT_ZOOM = 14;
 const CARTO_VOYAGER_STYLE =
@@ -16,6 +18,16 @@ interface MapComponentProps {
 export default function MapComponent({ className }: MapComponentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const selectionMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const { setEventFormOpen, setSelectedLocation, isEventFormOpen, selectedLocation } = useUIStore();
+
+  // Cleanup marker when selection is cleared
+  useEffect(() => {
+    if (!selectedLocation && selectionMarkerRef.current) {
+      selectionMarkerRef.current.remove();
+      selectionMarkerRef.current = null;
+    }
+  }, [selectedLocation]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -48,10 +60,27 @@ export default function MapComponent({ className }: MapComponentProps) {
       "bottom-left"
     );
 
-    // Cleanup on unmount — prevents WebGL context leaks
+    mapRef.current.on("click", (e) => {
+      // Remove previous marker if exists
+      if (selectionMarkerRef.current) {
+        selectionMarkerRef.current.remove();
+      }
+
+      const lngLat: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+      setSelectedLocation({ lng: e.lngLat.lng, lat: e.lngLat.lat });
+      setEventFormOpen(true);
+
+      // Create and store the new marker
+      selectionMarkerRef.current = new maplibregl.Marker()
+        .setLngLat(lngLat)
+        .addTo(mapRef.current!);
+    });
+
+    // Cleanup on unmount
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
+      selectionMarkerRef.current?.remove();
     };
   }, []);
 
