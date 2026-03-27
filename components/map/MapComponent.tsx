@@ -5,7 +5,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 const BARRANQUILLA_CENTER: [number, number] = [-74.7813, 10.9685];
-const DEFAULT_ZOOM = 13;
+const DEFAULT_ZOOM = 14;
 const CARTO_VOYAGER_STYLE =
   "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
 
@@ -30,7 +30,7 @@ export default function MapComponent({ className }: MapComponentProps) {
     // Navigation controls (zoom +/-)
     mapRef.current.addControl(
       new maplibregl.NavigationControl({ showCompass: true }),
-      "top-right"
+      "bottom-right"
     );
 
     // Current location button
@@ -39,7 +39,7 @@ export default function MapComponent({ className }: MapComponentProps) {
         positionOptions: { enableHighAccuracy: true },
         trackUserLocation: true,
       }),
-      "top-right"
+      "bottom-right"
     );
 
     // Scale bar
