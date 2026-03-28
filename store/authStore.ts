@@ -43,7 +43,7 @@ interface AuthState {
 }
 
 // Helpers outside the store
-const getCookie = (name: string) => {
+export const getCookie = (name: string) => {
   if (typeof document === "undefined") return null;
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);

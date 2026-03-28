@@ -6,9 +6,11 @@ import { Label } from "../ui/label";
 import { Calendar, MapPin, Type, Image as ImageIcon, Map, Star, Bell, Flag, Heart, Shield, Zap, X, RotateCcw, Trash } from "lucide-react";
 import { Field, FieldLabel } from "../ui/field";
 import { useUIStore } from "@/store/ui";
+import { useSocketStore } from "@/store/socketStore";
 
 export default function FormEvents() {
     const { isEventFormOpen, selectedLocation, setEventFormOpen, resetEventForm } = useUIStore();
+    const emitCreateEvent = useSocketStore(state => state.emitCreateEvent);
     const [selectedIcon, setSelectedIcon] = useState<string>("Map");
     const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -40,6 +42,25 @@ export default function FormEvents() {
         setSelectedIcon("Map");
         const input = document.getElementById('picture') as HTMLInputElement;
         if (input) input.value = '';
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        if (!selectedLocation) return;
+
+        emitCreateEvent({
+            title,
+            description,
+            lat: selectedLocation.lat,
+            lng: selectedLocation.lng,
+            datetime,
+            icon: selectedIcon
+        });
+
+        // Close form and reset
+        setEventFormOpen(false);
+        handleReset();
     };
 
     if (!isEventFormOpen) return null;
@@ -198,7 +219,11 @@ export default function FormEvents() {
                         >
                             <RotateCcw className="w-4 h-4" /> Restablecer
                         </Button>
-                        <Button type="submit" className="flex-2 font-semibold shadow-sm transition-transform active:scale-[0.98]">
+                        <Button 
+                            onClick={handleSubmit} 
+                            type="button" 
+                            className="flex-2 font-semibold shadow-sm transition-transform active:scale-[0.98]"
+                        >
                             Crear evento
                         </Button>
                     </CardFooter>
