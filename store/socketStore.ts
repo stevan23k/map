@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { io, Socket } from "socket.io-client";
 
-const API_URL = process.env.NEXT_PUBLIC_SOCKET_URL;
+const API_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL;
 
 interface Event {
     id: string;
@@ -44,6 +44,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         const currentSocket = get().socket;
         if (currentSocket) return;
 
+        console.log("Connecting to socket at:", API_URL);
         const socket = io(API_URL, {
             auth: {
                 token: `Bearer ${token}`,
