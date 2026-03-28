@@ -22,6 +22,10 @@ interface UserLocation {
   username: string;
 }
 
+interface Response {
+  success: boolean;
+  message: string;
+}
 interface SocketState {
   socket: Socket | null;
   isConnected: boolean;
@@ -31,7 +35,7 @@ interface SocketState {
   // Actions
   connect: (token?: string) => void;
   disconnect: () => void;
-  emitCreateEvent: (eventData: Omit<Event, "id" | "userId">) => void;
+  emitCreateEvent: (eventData: Omit<Event, "id" | "userId">) => Promise<Response>;
   emitUpdateLocation: (location: { lat: number; lng: number }) => void;
 }
 
@@ -113,9 +117,21 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
   emitCreateEvent: (eventData) => {
     const { socket } = get();
-    if (socket) {
-      socket.emit("create_event", eventData);
+    if (!socket) {
+      return Promise.resolve({ success: false, message: "No hay conexión con el servidor" });
     }
+
+    return new Promise((resolve) => {
+      // Configurar timeout por si el servidor no responde
+      const timeout = setTimeout(() => {
+        resolve({ success: false, message: "Tiempo de espera agotado" });
+      }, 5000);
+
+      socket.emit("create_event", eventData, (response: Response) => {
+        clearTimeout(timeout);
+        resolve(response || { success: true, message: "Evento creado con éxito" });
+      });
+    });
   },
 
   emitUpdateLocation: (location) => {

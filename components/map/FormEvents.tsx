@@ -13,6 +13,8 @@ export default function FormEvents() {
     const emitCreateEvent = useSocketStore(state => state.emitCreateEvent);
     const [selectedIcon, setSelectedIcon] = useState<string>("Map");
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Form states for manual reset
     const [title, setTitle] = useState("");
@@ -40,27 +42,53 @@ export default function FormEvents() {
         setDatetime("");
         setImagePreview(null);
         setSelectedIcon("Map");
+        setErrors({});
         const input = document.getElementById('picture') as HTMLInputElement;
         if (input) input.value = '';
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
-        if (!selectedLocation) return;
+        setErrors({});
 
-        emitCreateEvent({
-            title,
-            description,
-            lat: selectedLocation.lat,
-            lng: selectedLocation.lng,
-            datetime,
-            icon: selectedIcon
-        });
+        if (!selectedLocation) {
+            setErrors({ location: "Por favor, selecciona una ubicación en el mapa" });
+            return;
+        }
 
-        // Close form and reset
-        setEventFormOpen(false);
-        handleReset();
+        const newErrors: Record<string, string> = {};
+        if (!title.trim()) newErrors.title = "El título es requerido";
+        if (!description.trim()) newErrors.description = "La descripción es requerida";
+        if (!datetime) newErrors.datetime = "La fecha y hora son requeridas";
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const response = await emitCreateEvent({
+                title,
+                description,
+                lat: selectedLocation.lat,
+                lng: selectedLocation.lng,
+                datetime,
+                icon: selectedIcon
+            });
+
+            if (response.success) {
+                // Close form and reset
+                setEventFormOpen(false);
+                handleReset();
+            } else {
+                setErrors({ server: response.message });
+            }
+        } catch (error) {
+            setErrors({ server: "Error al crear el evento. Inténtalo de nuevo." });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     if (!isEventFormOpen) return null;
@@ -139,19 +167,22 @@ export default function FormEvents() {
                                     onChange={(e) => setTitle(e.target.value)}
                                     placeholder="E.g. Summer Music Festival"
                                     required
-                                    className="h-9"
+                                    className={`h-9 ${errors.title ? 'border-destructive' : ''}`}
                                 />
+                                {errors.title && <p className="text-[10px] font-medium text-destructive mt-0.5">{errors.title}</p>}
                             </div>
 
                             <div className="grid gap-1.5">
                                 <Label htmlFor="description" className="text-foreground/80 font-semibold text-xs uppercase tracking-wider">Descripción</Label>
                                 <textarea
                                     id="description"
+                                    required
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
-                                    className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                                    className={`flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none ${errors.description ? 'border-destructive' : ''}`}
                                     placeholder="Detalles sobre lo que sucederá..."
                                 />
+                                {errors.description && <p className="text-[10px] font-medium text-destructive mt-0.5">{errors.description}</p>}
                             </div>
 
                             <div className="grid gap-1.5">
@@ -164,8 +195,9 @@ export default function FormEvents() {
                                     readOnly
                                     placeholder="Selecciona una ubicación en el mapa"
                                     required
-                                    className="h-9 bg-muted/30 cursor-not-allowed"
+                                    className={`h-9 bg-muted/30 cursor-not-allowed ${errors.location ? 'border-destructive' : ''}`}
                                 />
+                                {errors.location && <p className="text-[10px] font-medium text-destructive mt-0.5">{errors.location}</p>}
                             </div>
 
                             <div className="grid gap-1.5">
@@ -178,8 +210,9 @@ export default function FormEvents() {
                                     value={datetime}
                                     onChange={(e) => setDatetime(e.target.value)}
                                     required
-                                    className="h-9 block w-full"
+                                    className={`h-9 block w-full ${errors.datetime ? 'border-destructive' : ''}`}
                                 />
+                                {errors.datetime && <p className="text-[10px] font-medium text-destructive mt-0.5">{errors.datetime}</p>}
                             </div>
 
                             <div className="grid gap-1.5 pb-2">
@@ -219,14 +252,29 @@ export default function FormEvents() {
                         >
                             <RotateCcw className="w-4 h-4" /> Restablecer
                         </Button>
-                        <Button 
-                            onClick={handleSubmit} 
-                            type="button" 
-                            className="flex-2 font-semibold shadow-sm transition-transform active:scale-[0.98]"
+                        <Button
+                            onClick={handleSubmit}
+                            type="button"
+                            disabled={isSubmitting}
+                            className="flex-2 font-semibold shadow-sm transition-transform active:scale-[0.98] relative"
                         >
-                            Crear evento
+                            {isSubmitting ? (
+                                <span className="flex items-center gap-2">
+                                    <div className="w-4 h-4 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" />
+                                    Creando...
+                                </span>
+                            ) : (
+                                "Crear evento"
+                            )}
                         </Button>
                     </CardFooter>
+                    {errors.server && (
+                        <div className="px-6 pb-4">
+                            <p className="text-xs font-medium text-destructive bg-destructive/10 p-2 rounded-md border border-destructive/20">
+                                {errors.server}
+                            </p>
+                        </div>
+                    )}
                 </Card>
             </div>
         </>
