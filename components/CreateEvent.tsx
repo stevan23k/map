@@ -1,10 +1,16 @@
 import { Plus, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { useUIStore } from "@/store/ui";
+import { useRouteStore } from "@/store/routeStore";
 
 export default function CreateEvent() {
     const { setEventFormOpen } = useUIStore();
     const { isEventFormOpen } = useUIStore();
+    const isRoutingMode = useRouteStore((state) => state.isRoutingMode);
+
+    // Hide when in routing mode
+    if (isRoutingMode) return null;
+
     return (
 
         !isEventFormOpen ? (

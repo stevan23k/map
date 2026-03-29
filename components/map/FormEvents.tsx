@@ -7,9 +7,11 @@ import { Calendar, MapPin, Type, Image as ImageIcon, Map, Star, Bell, Flag, Hear
 import { Field, FieldLabel } from "../ui/field";
 import { useUIStore } from "@/store/ui";
 import { useSocketStore } from "@/store/socketStore";
+import { useRouteStore } from "@/store/routeStore";
 
 export default function FormEvents() {
     const { isEventFormOpen, selectedLocation, setEventFormOpen, resetEventForm } = useUIStore();
+    const isRoutingMode = useRouteStore((state) => state.isRoutingMode);
     const emitCreateEvent = useSocketStore(state => state.emitCreateEvent);
     const [selectedIcon, setSelectedIcon] = useState<string>("Map");
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -91,6 +93,8 @@ export default function FormEvents() {
         }
     };
 
+    // Hide when in routing mode
+    if (isRoutingMode) return null;
     if (!isEventFormOpen) return null;
 
     const locationValue = selectedLocation

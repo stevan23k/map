@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import { useUIStore } from "@/store/ui";
 import { useSocketStore } from "@/store/socketStore";
+import { useRouteStore } from "@/store/routeStore";
 import * as LucideIcons from "lucide-react";
 import { createRoot } from "react-dom/client";
 import React from "react";
@@ -17,6 +18,44 @@ import {
 } from "@/components/ui/context-menu";
 import { Plus } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+
+// ─── OSRM Route Fetcher ─────────────────────────────────────────────────────
+type OSRMProfile = "driving" | "cycling" | "foot";
+
+const OSRM_ENDPOINTS: Record<OSRMProfile, string> = {
+  driving: "https://routing.openstreetmap.de/routed-car/route/v1/driving",
+  cycling: "https://routing.openstreetmap.de/routed-bike/route/v1/driving",
+  foot: "https://routing.openstreetmap.de/routed-foot/route/v1/driving",
+};
+
+async function fetchOSRMRoute(waypoints: [number, number][], profile: OSRMProfile = "driving") {
+  const coords = waypoints.map(([lng, lat]) => `${lng},${lat}`).join(";");
+  const base = OSRM_ENDPOINTS[profile];
+  const url = `${base}/${coords}?overview=full&geometries=geojson`;
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("OSRM request failed");
+
+  const data = await res.json();
+  if (!data.routes || data.routes.length === 0) throw new Error("No route found");
+
+  const route = data.routes[0];
+  const distanceKm = (route.distance / 1000).toFixed(1);
+  const durationMin = Math.ceil(route.duration / 60);
+
+  return {
+    geometry: route.geometry,
+    distance: `${distanceKm} km`,
+    duration: `${durationMin} min`,
+  };
+}
+
+// Marker colors for route waypoints
+const WAYPOINT_COLORS = {
+  first: "#10b981",  // green
+  last: "#ef4444",   // red
+  mid: "#6366f1",    // indigo
+};
 
 const BARRANQUILLA_CENTER: [number, number] = [-74.7813, 10.9685];
 const DEFAULT_ZOOM = 14;
@@ -40,10 +79,33 @@ export default function MapComponent({ className }: MapComponentProps) {
 
   const user = useAuthStore(state => state.user);
 
+  // Route marker refs
+  const routeMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const styleLoadedRef = useRef(false);
+
   const { setEventFormOpen, setSelectedLocation, isEventFormOpen, selectedLocation } = useUIStore();
   const events = useSocketStore((state) => state.events);
   const otherUsers = useSocketStore((state) => state.otherUsers);
   const emitUpdateLocation = useSocketStore((state) => state.emitUpdateLocation);
+
+  // Route store
+  const isRoutingMode = useRouteStore((state) => state.isRoutingMode);
+  const waypoints = useRouteStore((state) => state.waypoints);
+  const addWaypoint = useRouteStore((state) => state.addWaypoint);
+  const setRouteInfo = useRouteStore((state) => state.setRouteInfo);
+  const setRouteMenuOpen = useRouteStore((state) => state.setRouteMenuOpen);
+  const clearRoute = useRouteStore((state) => state.clearRoute);
+  const transportMode = useRouteStore((state) => state.transportMode);
+  const pendingFlyTo = useRouteStore((state) => state.pendingFlyTo);
+  const consumePendingFlyTo = useRouteStore((state) => state.consumePendingFlyTo);
+
+  // FlyTo when a geocode sets pendingFlyTo
+  useEffect(() => {
+    if (pendingFlyTo && mapRef.current) {
+      mapRef.current.flyTo({ center: pendingFlyTo, zoom: 14, duration: 800 });
+      consumePendingFlyTo();
+    }
+  }, [pendingFlyTo]);
 
   // Cleanup marker when selection is cleared
   useEffect(() => {
@@ -53,46 +115,73 @@ export default function MapComponent({ className }: MapComponentProps) {
     }
   }, [selectedLocation]);
 
+  // Mutual exclusion: routing mode ↔ event form
+  useEffect(() => {
+    if (isRoutingMode) {
+      // Close event form and clear selection marker when entering routing mode
+      setEventFormOpen(false);
+      setSelectedLocation(null);
+      if (selectionMarkerRef.current) {
+        selectionMarkerRef.current.remove();
+        selectionMarkerRef.current = null;
+      }
+    }
+  }, [isRoutingMode]);
+
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    mapRef.current = new maplibregl.Map({
-      container: containerRef.current,
-      style: CARTO_VOYAGER_STYLE,
-      center: BARRANQUILLA_CENTER,
-      zoom: DEFAULT_ZOOM,
-    });
+    // Fetch style and inject projection for MapLibre v5 compatibility
+    fetch(CARTO_VOYAGER_STYLE)
+      .then((r) => r.json())
+      .then((styleJson) => {
+        if (!containerRef.current) return;
 
-    mapRef.current.on("load", () => {
-      console.log("Map fully loaded");
-      setMapLoaded(true);
-    });
+        styleJson.projection = styleJson.projection || { type: "mercator" };
 
-    // Navigation controls (zoom +/-)
-    mapRef.current.addControl(
-      new maplibregl.NavigationControl({ showCompass: true }),
-      "bottom-right"
-    );
+        const map = new maplibregl.Map({
+          container: containerRef.current,
+          style: styleJson,
+          center: BARRANQUILLA_CENTER,
+          zoom: DEFAULT_ZOOM,
+        });
 
-    // Current location button
-    const geolocate = new maplibregl.GeolocateControl({
-      positionOptions: { enableHighAccuracy: true },
-      trackUserLocation: true,
-    });
+        map.on("load", () => {
+          console.log("Map fully loaded");
+          setMapLoaded(true);
+        });
 
-    geolocate.on("geolocate", (e: any) => {
-      const { coords } = e;
-      emitUpdateLocation({ lat: coords.latitude, lng: coords.longitude });
-    });
+        mapRef.current = map;
 
-    mapRef.current.addControl(geolocate, "bottom-right");
+        map.on("load", () => {
+          styleLoadedRef.current = true;
+        });
 
-    // Scale bar
-    mapRef.current.addControl(
-      new maplibregl.ScaleControl({ unit: "metric" }),
-      "bottom-left"
-    );
+        // Geolocation for socket emission
+        if (navigator.geolocation) {
+          navigator.geolocation.watchPosition(
+            (pos) => {
+              emitUpdateLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+            },
+            undefined,
+            { enableHighAccuracy: true }
+          );
+        }
 
+        // Track map center for Photon location biasing
+        map.on("moveend", () => {
+          const c = map.getCenter();
+          useRouteStore.getState().setMapCenter([c.lng, c.lat]);
+        });
+
+        map.on("click", (e) => {
+          const routingActive = useRouteStore.getState().isRoutingMode;
+          if (routingActive) {
+            const lngLat: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+            useRouteStore.getState().addWaypoint(lngLat);
+          }
+        });
+      });
     // Cleanup on unmount
     return () => {
       mapRef.current?.remove();
@@ -102,9 +191,11 @@ export default function MapComponent({ className }: MapComponentProps) {
       // Cleanup dynamic markers
       Object.values(eventMarkersRef.current).forEach(m => m.remove());
       Object.values(userMarkersRef.current).forEach(m => m.remove());
+      routeMarkersRef.current.forEach(m => m.remove());
     };
   }, []);
 
+  // ─── Context Menu (right-click to create event) ─────────────────────────
   const handleContextMenu = (e: React.MouseEvent) => {
     if (!mapRef.current) return;
     const rect = containerRef.current?.getBoundingClientRect();
@@ -134,6 +225,128 @@ export default function MapComponent({ className }: MapComponentProps) {
       .setLngLat([lastRightClickCoords.lng, lastRightClickCoords.lat])
       .addTo(mapRef.current);
   };
+
+  // ─── Sync Route Waypoints & Draw Route ──────────────────────────────────
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleLoadedRef.current) return;
+
+    // 1. Clear old route markers
+    routeMarkersRef.current.forEach((m) => m.remove());
+    routeMarkersRef.current = [];
+
+    // If routing mode is off, clean the line too
+    if (!isRoutingMode) {
+      try {
+        if (map.getLayer("osrm-route-line")) map.removeLayer("osrm-route-line");
+        if (map.getSource("osrm-route")) map.removeSource("osrm-route");
+      } catch { /* style not ready */ }
+      return;
+    }
+
+    // 2. Draw new route markers
+    waypoints.forEach((wp, i) => {
+      const isFirst = i === 0;
+      const isLast = i === waypoints.length - 1 && waypoints.length > 1;
+
+      const color = isFirst
+        ? WAYPOINT_COLORS.first
+        : isLast
+        ? WAYPOINT_COLORS.last
+        : WAYPOINT_COLORS.mid;
+
+      // Custom marker element
+      const el = document.createElement("div");
+      el.style.cssText = `
+        width: 28px; height: 28px; border-radius: 50%;
+        background: ${color}; border: 3px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 11px; font-weight: 700; color: white;
+        font-family: system-ui, sans-serif;
+      `;
+      el.textContent = wp.label;
+
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat(wp.lngLat)
+        .addTo(map);
+
+      routeMarkersRef.current.push(marker);
+    });
+
+    // 3. Fetch route if 2+ waypoints
+    if (waypoints.length >= 2) {
+      const coords = waypoints.map((wp) => wp.lngLat);
+
+      fetchOSRMRoute(coords, transportMode)
+        .then(({ geometry, distance, duration }) => {
+          setRouteInfo({ distance, duration });
+          setRouteMenuOpen(true);
+
+          // Draw / update geojson line
+          const sourceData: GeoJSON.Feature = {
+            type: "Feature",
+            properties: {},
+            geometry,
+          };
+
+          if (map.getSource("osrm-route")) {
+            (map.getSource("osrm-route") as maplibregl.GeoJSONSource).setData(
+              sourceData
+            );
+          } else {
+            map.addSource("osrm-route", {
+              type: "geojson",
+              data: sourceData,
+            });
+            map.addLayer({
+              id: "osrm-route-line",
+              type: "line",
+              source: "osrm-route",
+              layout: {
+                "line-join": "round",
+                "line-cap": "round",
+              },
+              paint: {
+                "line-color": "#6366f1",
+                "line-width": 5,
+                "line-opacity": 0.85,
+              },
+            });
+          }
+
+          // Fit bounds to route
+          const allCoords = geometry.coordinates as [number, number][];
+          const bounds = allCoords.reduce(
+            (b, c) => b.extend(c),
+            new maplibregl.LngLatBounds(allCoords[0], allCoords[0])
+          );
+          map.fitBounds(bounds, { padding: 60, duration: 600 });
+        })
+        .catch((err) => {
+          console.error("OSRM route error:", err);
+          setRouteInfo(null);
+        });
+    } else {
+      // Less than 2 waypoints — remove line if exists
+      if (map.getLayer("osrm-route-line")) map.removeLayer("osrm-route-line");
+      if (map.getSource("osrm-route")) map.removeSource("osrm-route");
+      setRouteInfo(null);
+    }
+  }, [waypoints, isRoutingMode, transportMode]);
+
+  // Cleanup route visuals when routing mode is turned off
+  useEffect(() => {
+    if (!isRoutingMode && mapRef.current && styleLoadedRef.current) {
+      routeMarkersRef.current.forEach((m) => m.remove());
+      routeMarkersRef.current = [];
+      const map = mapRef.current;
+      try {
+        if (map.getLayer("osrm-route-line")) map.removeLayer("osrm-route-line");
+        if (map.getSource("osrm-route")) map.removeSource("osrm-route");
+      } catch { /* style not ready */ }
+    }
+  }, [isRoutingMode]);
 
   // Sync Event Markers
   useEffect(() => {
