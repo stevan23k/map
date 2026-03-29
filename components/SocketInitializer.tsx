@@ -11,18 +11,15 @@ export function SocketInitializer({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         const token = getCookie("access_token");
-        
-        if (user && token) {
-            connect(token);
-        } else {
-            disconnect();
-        }
+
+        // Connect regardless of user status, passing token if available
+        connect(token || undefined);
 
         return () => {
             // Optional: disconnect on unmount if needed
             // disconnect();
         };
-    }, [user, connect, disconnect]);
+    }, [user, connect]);
 
     return <>{children}</>;
 }

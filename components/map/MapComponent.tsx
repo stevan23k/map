@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -10,6 +10,14 @@ import { useRouteStore } from "@/store/routeStore";
 import * as LucideIcons from "lucide-react";
 import { createRoot } from "react-dom/client";
 import React from "react";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger
+} from "@/components/ui/context-menu";
+import { Plus } from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
 
 // ─── OSRM Route Fetcher ─────────────────────────────────────────────────────
 type OSRMProfile = "driving" | "cycling" | "foot";
@@ -62,10 +70,14 @@ export default function MapComponent({ className }: MapComponentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const selectionMarkerRef = useRef<maplibregl.Marker | null>(null);
-  
+
   // Refs to track dynamic markers
   const eventMarkersRef = useRef<Record<string, maplibregl.Marker>>({});
   const userMarkersRef = useRef<Record<string, maplibregl.Marker>>({});
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [lastRightClickCoords, setLastRightClickCoords] = useState<{ lng: number, lat: number } | null>(null);
+
+  const user = useAuthStore(state => state.user);
 
   // Route marker refs
   const routeMarkersRef = useRef<maplibregl.Marker[]>([]);
@@ -134,6 +146,11 @@ export default function MapComponent({ className }: MapComponentProps) {
           zoom: DEFAULT_ZOOM,
         });
 
+        map.on("load", () => {
+          console.log("Map fully loaded");
+          setMapLoaded(true);
+        });
+
         mapRef.current = map;
 
         map.on("load", () => {
@@ -158,37 +175,56 @@ export default function MapComponent({ className }: MapComponentProps) {
         });
 
         map.on("click", (e) => {
-          const lngLat: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-
           const routingActive = useRouteStore.getState().isRoutingMode;
-
           if (routingActive) {
+            const lngLat: [number, number] = [e.lngLat.lng, e.lngLat.lat];
             useRouteStore.getState().addWaypoint(lngLat);
-            return;
           }
-
-          if (selectionMarkerRef.current) {
-            selectionMarkerRef.current.remove();
-          }
-          setSelectedLocation({ lng: e.lngLat.lng, lat: e.lngLat.lat });
-          setEventFormOpen(true);
-          selectionMarkerRef.current = new maplibregl.Marker()
-            .setLngLat(lngLat)
-            .addTo(map);
         });
       });
-
     // Cleanup on unmount
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
       selectionMarkerRef.current?.remove();
-      
+
+      // Cleanup dynamic markers
       Object.values(eventMarkersRef.current).forEach(m => m.remove());
       Object.values(userMarkersRef.current).forEach(m => m.remove());
       routeMarkersRef.current.forEach(m => m.remove());
     };
   }, []);
+
+  // ─── Context Menu (right-click to create event) ─────────────────────────
+  const handleContextMenu = (e: React.MouseEvent) => {
+    if (!mapRef.current) return;
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    // Convert screen coordinates to map container coordinates
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const lngLat = mapRef.current.unproject([x, y]);
+    setLastRightClickCoords({ lng: lngLat.lng, lat: lngLat.lat });
+  };
+
+  const handleCreateEvent = () => {
+    if (!lastRightClickCoords || !mapRef.current) return;
+
+    // Set selected location and open form
+    setSelectedLocation(lastRightClickCoords);
+    setEventFormOpen(true);
+
+    // Create and store the new selection marker
+    if (selectionMarkerRef.current) {
+      selectionMarkerRef.current.remove();
+    }
+
+    selectionMarkerRef.current = new maplibregl.Marker()
+      .setLngLat([lastRightClickCoords.lng, lastRightClickCoords.lat])
+      .addTo(mapRef.current);
+  };
 
   // ─── Sync Route Waypoints & Draw Route ──────────────────────────────────
   useEffect(() => {
@@ -314,8 +350,8 @@ export default function MapComponent({ className }: MapComponentProps) {
 
   // Sync Event Markers
   useEffect(() => {
-    if (!mapRef.current) return;
-    
+    if (!mapRef.current || !mapLoaded) return;
+
     console.log("Syncing event markers, current events count:", events.length);
 
     // Create new markers or skip existing
@@ -323,7 +359,7 @@ export default function MapComponent({ className }: MapComponentProps) {
       if (!eventMarkersRef.current[event.id]) {
         console.log("Creating marker for event:", event.title, "at", event.lat, event.lng);
         const el = document.createElement('div');
-        
+
         // Render icon
         const IconComponent = (LucideIcons as any)[event.icon] || LucideIcons.MapPin;
         const root = createRoot(el);
@@ -348,17 +384,17 @@ export default function MapComponent({ className }: MapComponentProps) {
         delete eventMarkersRef.current[id];
       }
     });
-  }, [events]);
+  }, [events, mapLoaded]);
 
   // Sync Other User Markers
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !mapLoaded) return;
 
     Object.values(otherUsers).forEach(userData => {
       if (!userMarkersRef.current[userData.userId]) {
         const el = document.createElement('div');
         el.className = 'w-8 h-8 flex items-center justify-center bg-blue-500 text-white rounded-full shadow-md border-2 border-white';
-        
+
         const root = createRoot(el);
         root.render(React.createElement(LucideIcons.User, { size: 16 }));
 
@@ -384,13 +420,25 @@ export default function MapComponent({ className }: MapComponentProps) {
         delete userMarkersRef.current[id];
       }
     });
-  }, [otherUsers]);
+  }, [otherUsers, mapLoaded]);
 
   return (
-    <div
-      ref={containerRef}
-      className={className ?? "w-full h-full"}
-      aria-label="Mapa interactivo de Barranquilla"
-    />
+    <ContextMenu>
+      <ContextMenuTrigger onContextMenu={handleContextMenu} className="w-full h-full block">
+        <div
+          ref={containerRef}
+          className={className ?? "w-full h-full"}
+          aria-label="Mapa interactivo de Barranquilla"
+        />
+      </ContextMenuTrigger>
+      {user && (
+        <ContextMenuContent className="w-48">
+          <ContextMenuItem onClick={handleCreateEvent} className="gap-2">
+            <Plus className="w-4 h-4" />
+            <span>Crear evento aquí</span>
+          </ContextMenuItem>
+        </ContextMenuContent>
+      )}
+    </ContextMenu>
   );
 }
