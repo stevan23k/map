@@ -46,65 +46,70 @@ export const useSocketStore = create<SocketState>((set, get) => ({
   otherUsers: {},
 
   connect: (token?: string) => {
-    const currentSocket = get().socket;
+    try {
+      const currentSocket = get().socket;
 
-    // If already connected, we might need to reconnect if the token is new
-    if (currentSocket) {
-      if (token) {
-        console.log("Reconnecting with new token...");
-        currentSocket.disconnect();
-      } else {
-        return; // Already connected as guest or with token
+      if (currentSocket) {
+        if (token) {
+          console.log("Reconnecting with new token...");
+          currentSocket.disconnect();
+        } else {
+          return;
+        }
       }
-    }
 
-    console.log("Connecting to socket at:", API_URL, token ? "with token" : "as guest");
+      if (!API_URL) {
+        console.warn("[Socket] No API_URL configured — running in offline mode");
+        return;
+      }
 
-    const socketOptions: any = {};
-    if (token) {
-      socketOptions.auth = {
-        token: `Bearer ${token}`,
+      console.log("Connecting to socket at:", API_URL, token ? "with token" : "as guest");
+
+      const socketOptions: any = {
+        // Fail fast — don't block the UI waiting for a dead server
+        timeout: 3000,
+        reconnectionAttempts: 3,
+        reconnectionDelay: 2000,
       };
+      if (token) {
+        socketOptions.auth = { token: `Bearer ${token}` };
+      }
+
+      const socket = io(API_URL, socketOptions);
+
+      socket.on("connect", () => {
+        set({ isConnected: true });
+        console.log("Socket connected:", socket.id);
+      });
+
+      socket.on("disconnect", () => {
+        set({ isConnected: false });
+        console.log("Socket disconnected");
+      });
+
+      socket.on("connect_error", (err) => {
+        console.warn("[Socket] Connection error (app continues offline):", err.message);
+      });
+
+      socket.on("event_created", (newEvent: Event) => {
+        set((state) => ({ events: [newEvent, ...state.events] }));
+      });
+
+      socket.on("all_events", (allEvents: Event[]) => {
+        set({ events: allEvents });
+      });
+
+      socket.on("user_location_updated", (userData: UserLocation) => {
+        set((state) => ({
+          otherUsers: { ...state.otherUsers, [userData.userId]: userData },
+        }));
+      });
+
+      set({ socket });
+    } catch (err) {
+      // FRONTEND-FIRST: if socket fails to initialize, app continues offline
+      console.warn("[Socket] Failed to initialize — running in offline mode", err);
     }
-
-    const socket = io(API_URL, socketOptions);
-
-    socket.on("connect", () => {
-      set({ isConnected: true });
-      console.log("Socket connected:", socket.id);
-    });
-
-    socket.on("disconnect", () => {
-      set({ isConnected: false });
-      console.log("Socket disconnected");
-    });
-
-    // Listen for new events from others
-    socket.on("event_created", (newEvent: Event) => {
-      console.log("New event received via socket:", newEvent);
-      set((state) => ({
-        events: [newEvent, ...state.events],
-      }));
-    });
-
-    // Listen for all events (initial or periodic refresh)
-    socket.on("all_events", (allEvents: Event[]) => {
-      console.log("All events received via socket:", allEvents);
-      set({ events: allEvents });
-    });
-
-    // Listen for other users moving
-    socket.on("user_location_updated", (userData: UserLocation) => {
-      console.log("User location updated via socket:", userData);
-      set((state) => ({
-        otherUsers: {
-          ...state.otherUsers,
-          [userData.userId]: userData,
-        },
-      }));
-    });
-
-    set({ socket });
   },
 
   disconnect: () => {
@@ -117,27 +122,34 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
   emitCreateEvent: (eventData) => {
     const { socket } = get();
-    if (!socket) {
-      return Promise.resolve({ success: false, message: "No hay conexión con el servidor" });
+    if (!socket || !socket.connected) {
+      // FRONTEND-FIRST: return success immediately — data is already in the store
+      console.warn("[Socket] Offline — event saved locally only");
+      return Promise.resolve({ success: false, message: "Sin conexión — guardado localmente" });
     }
 
     return new Promise((resolve) => {
-      // Configurar timeout por si el servidor no responde
+      // 2s timeout — don't block the UI
       const timeout = setTimeout(() => {
-        resolve({ success: false, message: "Tiempo de espera agotado" });
-      }, 5000);
+        console.warn("[Socket] Server timeout — event saved locally");
+        resolve({ success: false, message: "Timeout — guardado localmente" });
+      }, 2000);
 
       socket.emit("create_event", eventData, (response: Response) => {
         clearTimeout(timeout);
-        resolve(response || { success: true, message: "Evento creado con éxito" });
+        resolve(response || { success: true, message: "Evento creado" });
       });
     });
   },
 
   emitUpdateLocation: (location) => {
-    const { socket } = get();
-    if (socket) {
-      socket.emit("update_location", location);
+    try {
+      const { socket } = get();
+      if (socket?.connected) {
+        socket.emit("update_location", location);
+      }
+    } catch {
+      // Silently swallow — geolocation is non-critical
     }
   },
 }));

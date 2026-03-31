@@ -17,22 +17,24 @@ export default function MapHeader() {
                     <GlobalSearchBar />
                 </div>
 
-                <div className="flex flex-row items-center gap-2">
-                    <div className="flex flex-row items-center gap-2">
-                        <div className={`h-3 w-3 rounded-full ${isConnected ? "bg-green-500" : "bg-red-500"}`}></div>
-                        <p className={`text-sm font-semibold ${isConnected ? "text-green-500" : "text-red-500"}`}>{isConnected ? "Conectado" : "Desconectado"}</p>
+                {/* Status + Avatar — text first, avatar rightmost */}
+                <div className="flex items-center gap-3 justify-end">
+                    {/* Connection status */}
+                    <div className="flex items-center gap-2">
+                        <div className={`h-3 w-3 rounded-full flex-shrink-0 ${isConnected ? "bg-green-500" : "bg-red-500"}`} />
+                        <span className={`text-sm font-semibold whitespace-nowrap ${isConnected ? "text-green-500" : "text-red-500"}`}>
+                            {isConnected ? "Conectado" : "Desconectado"}
+                        </span>
                     </div>
-                    <div>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="rounded-full cursor-pointer h-10 w-10"
-                            onClick={() => router.push("/profile")}
-                        >
-                            <User size={32} />
-
-                        </Button>
-                    </div>
+                    {/* Avatar — always rightmost, never pushed */}
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex-shrink-0 rounded-full cursor-pointer h-10 w-10"
+                        onClick={() => router.push("/profile")}
+                    >
+                        <User size={32} />
+                    </Button>
                 </div>
             </div>
         </header >

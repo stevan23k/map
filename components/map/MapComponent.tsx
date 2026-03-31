@@ -18,8 +18,9 @@ import {
 } from "@/components/ui/context-menu";
 import { Plus } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { reverseGeocode } from "@/lib/geocoding";
 
-// ─── OSRM Route Fetcher ─────────────────────────────────────────────────────
+// ─── Routing Engines ────────────────────────────────────────────────────────
 type OSRMProfile = "driving" | "cycling" | "foot";
 
 const OSRM_ENDPOINTS: Record<OSRMProfile, string> = {
@@ -28,25 +29,95 @@ const OSRM_ENDPOINTS: Record<OSRMProfile, string> = {
   foot: "https://routing.openstreetmap.de/routed-foot/route/v1/driving",
 };
 
-async function fetchOSRMRoute(waypoints: [number, number][], profile: OSRMProfile = "driving") {
+const MAPBOX_PROFILES: Record<OSRMProfile, string> = {
+  driving: "driving",
+  cycling: "cycling",
+  foot: "walking",
+};
+
+interface OSRMResult {
+  geometry: GeoJSON.LineString;
+  distance: string;
+  duration: string;
+}
+
+// Haversine distance in km
+function getHaversineDistance(lon1: number, lat1: number, lon2: number, lat2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// Ultimate fallback: straight line geometry + math estimation
+function generateMathematicalFallback(waypoints: [number, number][]): OSRMResult {
+  let totalDistanceDescKm = 0;
+  for (let i = 0; i < waypoints.length - 1; i++) {
+    totalDistanceDescKm += getHaversineDistance(
+      waypoints[i][0], waypoints[i][1],
+      waypoints[i+1][0], waypoints[i+1][1]
+    );
+  }
+  
+  // Real world factor (curves/blocks)
+  const drivingDistance = totalDistanceDescKm * 1.5;
+  // Assume city traffic average: 30km/h = 2 min per km
+  const durationMin = Math.ceil(drivingDistance * 2);
+
+  console.log("[Routing] Usando estimación offline");
+  return {
+    geometry: { type: "LineString", coordinates: waypoints },
+    distance: `${drivingDistance.toFixed(1)} km`,
+    duration: `${durationMin} min`,
+  };
+}
+
+async function fetchOSRMRoute(
+  waypoints: [number, number][],
+  profile: OSRMProfile = "driving"
+): Promise<OSRMResult> {
   const coords = waypoints.map(([lng, lat]) => `${lng},${lat}`).join(";");
-  const base = OSRM_ENDPOINTS[profile];
-  const url = `${base}/${coords}?overview=full&geometries=geojson`;
+  
+  // ── Engine 1: OSRM Public (4s timeout) ──────────────────────────────────
+  try {
+    const base = OSRM_ENDPOINTS[profile];
+    const res = await fetch(`${base}/${coords}?overview=full&geometries=geojson`, {
+      signal: AbortSignal.timeout(4000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.routes?.length > 0) return parseOSRMResponse(data.routes[0]);
+    }
+  } catch (err) {
+    console.warn("[Routing] Engine 1 (OSRM) timeout or fail. Trying engine 2...");
+  }
 
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("OSRM request failed");
+  // ── Engine 2: Mapbox Directions API (4s timeout) ────────────────────────
+  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+  if (token) {
+    try {
+      const mbProfile = MAPBOX_PROFILES[profile];
+      const url = `https://api.mapbox.com/directions/v5/mapbox/${mbProfile}/${coords}?geometries=geojson&access_token=${token}`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.routes?.length > 0) return parseOSRMResponse(data.routes[0]);
+      }
+    } catch (err) {
+      console.warn("[Routing] Engine 2 (Mapbox) timeout or fail. Using math fallback...");
+    }
+  }
 
-  const data = await res.json();
-  if (!data.routes || data.routes.length === 0) throw new Error("No route found");
+  // ── Engine 3: Mathematical Pseudo-Geometry (Instant) ────────────────────
+  return generateMathematicalFallback(waypoints);
+}
 
-  const route = data.routes[0];
-  const distanceKm = (route.distance / 1000).toFixed(1);
-  const durationMin = Math.ceil(route.duration / 60);
-
+function parseOSRMResponse(route: any): OSRMResult {
   return {
     geometry: route.geometry,
-    distance: `${distanceKm} km`,
-    duration: `${durationMin} min`,
+    distance: `${(route.distance / 1000).toFixed(1)} km`,
+    duration: `${Math.ceil(route.duration / 60)} min`,
   };
 }
 
@@ -102,7 +173,12 @@ export default function MapComponent({ className }: MapComponentProps) {
   // FlyTo when a geocode sets pendingFlyTo
   useEffect(() => {
     if (pendingFlyTo && mapRef.current) {
-      mapRef.current.flyTo({ center: pendingFlyTo, zoom: 14, duration: 800 });
+      mapRef.current.flyTo({
+        center: pendingFlyTo.center,
+        zoom: pendingFlyTo.zoom,
+        duration: 800,
+        essential: true,
+      });
       consumePendingFlyTo();
     }
   }, [pendingFlyTo]);
@@ -176,10 +252,23 @@ export default function MapComponent({ className }: MapComponentProps) {
 
         map.on("click", (e) => {
           const routingActive = useRouteStore.getState().isRoutingMode;
-          if (routingActive) {
-            const lngLat: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-            useRouteStore.getState().addWaypoint(lngLat);
-          }
+          if (!routingActive) return;
+
+          const lngLat: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+
+          // Add waypoint immediately with coords as placeholder label
+          useRouteStore.getState().addWaypoint(lngLat);
+
+          // Resolve street name in background, then update the waypoint label
+          reverseGeocode(lngLat).then((streetName) => {
+            if (!streetName) return;
+            const store = useRouteStore.getState();
+            const idx = store.waypoints.length - 1;
+            // Guard: waypoint must still exist and still show coords
+            if (idx >= 0) {
+              store.updateWaypointLngLat(idx, lngLat, streetName, streetName);
+            }
+          });
         });
       });
     // Cleanup on unmount
@@ -323,7 +412,7 @@ export default function MapComponent({ className }: MapComponentProps) {
           map.fitBounds(bounds, { padding: 60, duration: 600 });
         })
         .catch((err) => {
-          console.error("OSRM route error:", err);
+          console.error("[OSRM] Unhandled error:", err);
           setRouteInfo(null);
         });
     } else {

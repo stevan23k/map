@@ -21,47 +21,8 @@ import {
   Search,
 } from "lucide-react";
 
-// ─── Photon autocomplete fetcher ─────────────────────────────────────────────
-interface PhotonFeature {
-  geometry: { coordinates: [number, number] };
-  properties: {
-    name?: string;
-    city?: string;
-    state?: string;
-    country?: string;
-    street?: string;
-    housenumber?: string;
-    postcode?: string;
-  };
-}
-
-async function searchPhoton(
-  query: string,
-  center: [number, number],
-  limit = 5
-): Promise<PhotonFeature[]> {
-  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(
-    query
-  )}&lat=${center[1]}&lon=${center[0]}&limit=${limit}`;
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.features || [];
-  } catch {
-    return [];
-  }
-}
-
-function formatPhotonName(f: PhotonFeature): string {
-  const p = f.properties;
-  return p.name || [p.street, p.housenumber].filter(Boolean).join(" ") || "Sin nombre";
-}
-
-function formatPhotonSubtitle(f: PhotonFeature): string {
-  const p = f.properties;
-  return [p.city, p.state, p.country].filter(Boolean).join(", ");
-}
+// ─── Hybrid geocoding ────────────────────────────────────────────────────────
+import { hybridGeocode, zoomForPlaceType, rankByRelevance, type GeoResult, type GeocodingBias } from "@/lib/geocoding";
 
 // ─── Transport options ───────────────────────────────────────────────────────
 const TRANSPORT_OPTIONS: {
@@ -78,11 +39,13 @@ const TRANSPORT_OPTIONS: {
 interface AutocompleteInputProps {
   value: string;
   onChange: (val: string) => void;
-  onSelect: (lngLat: [number, number], name: string) => void;
+  onSelect: (lngLat: [number, number], name: string, streetName: string) => void;
   placeholder: string;
   icon: React.ReactNode;
   isLoading?: boolean;
   rightSlot?: React.ReactNode;
+  // mapCenter is kept in props for stable rendering; actual bias is read from
+  // store.getState() at fire time so it’s always the freshest value.
   mapCenter: [number, number];
 }
 
@@ -96,9 +59,12 @@ function AutocompleteInput({
   rightSlot,
   mapCenter,
 }: AutocompleteInputProps) {
-  const [suggestions, setSuggestions] = useState<PhotonFeature[]>([]);
+  const [suggestions, setSuggestions] = useState<GeoResult[]>([]);
   const [isFocused, setIsFocused] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // AbortController — cancels stale in-flight requests when user types fast
+  const abortRef = useRef<AbortController | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Close suggestions on outside click
@@ -116,35 +82,58 @@ function AutocompleteInput({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // Cleanup abort controller on unmount
+  useEffect(() => () => { abortRef.current?.abort(); }, []);
+
   const handleChange = useCallback(
     (text: string) => {
       onChange(text);
 
+      // Cancel previous debounce timer
       if (debounceRef.current) clearTimeout(debounceRef.current);
 
-      if (text.trim().length < 3) {
+      if (text.trim().length < 5) {
         setSuggestions([]);
         return;
       }
 
+      // 450 ms debounce — lets the user finish typing before firing
       debounceRef.current = setTimeout(async () => {
-        const results = await searchPhoton(text, mapCenter);
-        setSuggestions(results);
-      }, 300);
+        abortRef.current?.abort();
+        abortRef.current = new AbortController();
+        const { signal } = abortRef.current;
+
+        const center = useRouteStore.getState().mapCenter;
+        const bias: GeocodingBias = { lng: center[0], lat: center[1] };
+
+        setIsSearching(true);
+        try {
+          const raw = await hybridGeocode(text, bias, signal);
+          if (!signal.aborted) {
+            setSuggestions(rankByRelevance(raw, text));
+          }
+        } catch (err) {
+          if (!signal.aborted) {
+            console.error("[Geocoding] RoutePanel search failed:", err);
+            setSuggestions([]);
+          }
+        } finally {
+          if (!signal.aborted) setIsSearching(false);
+        }
+      }, 450);
     },
-    [mapCenter, onChange]
+    [onChange] // mapCenter omitted — always fetched fresh via getState()
   );
 
-  const handleSelect = (feature: PhotonFeature) => {
-    const [lon, lat] = feature.geometry.coordinates;
-    const name = formatPhotonName(feature);
-    onSelect([lon, lat], name);
-    onChange(name);
+  const handleSelect = (result: GeoResult) => {
+    onSelect(result.exactCoords, result.streetName, result.streetName);
+    onChange(result.streetName);
     setSuggestions([]);
     setIsFocused(false);
   };
 
   const showSuggestions = isFocused && suggestions.length > 0;
+  const isSpinning = isLoading || isSearching;
 
   return (
     <div ref={containerRef} className="flex items-center gap-2 group relative">
@@ -158,25 +147,34 @@ function AutocompleteInput({
           placeholder={placeholder}
           className="w-full bg-zinc-100 border border-transparent focus:border-indigo-500 focus:bg-white rounded-lg px-3 py-2 text-sm text-zinc-700 placeholder:text-zinc-400 outline-none transition-colors"
         />
-        {isLoading && (
+        {isSpinning && (
           <Loader2 className="w-3.5 h-3.5 text-indigo-500 absolute right-2.5 top-1/2 -translate-y-1/2 animate-spin" />
         )}
         {/* Suggestions dropdown */}
         {showSuggestions && (
           <ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-xl mt-1 max-h-60 overflow-y-auto">
-            {suggestions.map((feature, idx) => (
+            {suggestions.map((result, idx) => (
               <li
                 key={idx}
-                onClick={() => handleSelect(feature)}
-                className="px-4 py-3 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-0 text-sm flex flex-col transition-colors"
+                onClick={() => handleSelect(result)}
+                className="px-4 py-3 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-0 text-sm flex items-start gap-2.5 transition-colors"
               >
-                <span className="font-semibold text-zinc-800 flex items-center gap-1.5">
-                  <Search className="w-3 h-3 text-zinc-400 shrink-0" />
-                  {formatPhotonName(feature)}
-                </span>
-                <span className="text-xs text-zinc-400 ml-[18px]">
-                  {formatPhotonSubtitle(feature)}
-                </span>
+                <MapPin className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-zinc-800 truncate">
+                      {result.streetName}
+                    </span>
+                    {result.source === "mapbox" && (
+                      <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-indigo-500 bg-indigo-50 rounded px-1 py-0.5">
+                        Exacta
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-zinc-400 truncate block">
+                    {result.subtitle}
+                  </span>
+                </div>
               </li>
             ))}
           </ul>
@@ -215,21 +213,23 @@ export default function RoutePanel() {
   const handleSelectExisting = (
     index: number,
     lngLat: [number, number],
-    name: string
+    name: string,
+    streetName: string
   ) => {
-    updateWaypointLngLat(index, lngLat, name);
-    setPendingFlyTo(lngLat);
+    updateWaypointLngLat(index, lngLat, name, streetName);
+    setPendingFlyTo(lngLat, zoomForPlaceType("address"));
   };
 
   // Select handler for empty inputs (create new waypoint)
   const handleSelectNew = (
     lngLat: [number, number],
     name: string,
+    streetName: string,
     clearLocal: () => void
   ) => {
-    addWaypoint(lngLat, name);
+    addWaypoint(lngLat, name, streetName);
     clearLocal();
-    setPendingFlyTo(lngLat);
+    setPendingFlyTo(lngLat, zoomForPlaceType("address"));
   };
 
   // ─── Inactive: floating RUTA button ────────────────────────────────────────
@@ -338,9 +338,9 @@ export default function RoutePanel() {
             }
             onSelect={
               originWp
-                ? (lngLat, name) => handleSelectExisting(0, lngLat, name)
-                : (lngLat, name) =>
-                    handleSelectNew(lngLat, name, () => setOriginText(""))
+                ? (lngLat, name, streetName) => handleSelectExisting(0, lngLat, name, streetName)
+                : (lngLat, name, streetName) =>
+                    handleSelectNew(lngLat, name, streetName, () => setOriginText(""))
             }
             placeholder="Origen — busca una dirección"
             icon={
@@ -384,8 +384,8 @@ export default function RoutePanel() {
                     key={realIndex}
                     value={wp.displayText}
                     onChange={(val) => updateWaypointText(realIndex, val)}
-                    onSelect={(lngLat, name) =>
-                      handleSelectExisting(realIndex, lngLat, name)
+                    onSelect={(lngLat, name, streetName) =>
+                      handleSelectExisting(realIndex, lngLat, name, streetName)
                     }
                     placeholder={`Parada ${wp.label}`}
                     icon={
@@ -417,10 +417,10 @@ export default function RoutePanel() {
             }
             onSelect={
               destWp
-                ? (lngLat, name) =>
-                    handleSelectExisting(waypoints.length - 1, lngLat, name)
-                : (lngLat, name) =>
-                    handleSelectNew(lngLat, name, () => setDestText(""))
+                ? (lngLat, name, streetName) =>
+                    handleSelectExisting(waypoints.length - 1, lngLat, name, streetName)
+                : (lngLat, name, streetName) =>
+                    handleSelectNew(lngLat, name, streetName, () => setDestText(""))
             }
             placeholder="Destino — busca una dirección"
             icon={<MapPin className="w-4 h-4 shrink-0 text-red-500" />}
