@@ -4,8 +4,7 @@ import { useUIStore } from "@/store/ui";
 import { useRouteStore } from "@/store/routeStore";
 
 export default function CreateEvent() {
-    const { setEventFormOpen } = useUIStore();
-    const { isEventFormOpen } = useUIStore();
+    const { openEventForm, setEventFormOpen, isEventFormOpen } = useUIStore();
     const isRoutingMode = useRouteStore((state) => state.isRoutingMode);
 
     // Hide when in routing mode
@@ -15,7 +14,7 @@ export default function CreateEvent() {
 
         !isEventFormOpen ? (
             <div className="fixed bottom-12 right-15 z-10">
-                <Button onClick={() => setEventFormOpen(true)} className="rounded-full cursor-pointer" variant="outline" size="lg"><Plus size={32} /></Button>
+                <Button onClick={() => openEventForm()} className="rounded-full cursor-pointer" variant="outline" size="lg"><Plus size={32} /></Button>
             </div>
         ) : (
             <div className="fixed bottom-12 right-15 z-10">

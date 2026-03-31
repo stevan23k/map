@@ -83,7 +83,7 @@ export default function MapComponent({ className }: MapComponentProps) {
   const routeMarkersRef = useRef<maplibregl.Marker[]>([]);
   const styleLoadedRef = useRef(false);
 
-  const { setEventFormOpen, setSelectedLocation, isEventFormOpen, selectedLocation, setSelectedEvent } = useUIStore();
+  const { setEventFormOpen, setSelectedLocation, isEventFormOpen, selectedLocation, setSelectedEvent, openEventForm } = useUIStore();
   const events = useSocketStore((state) => state.events);
   const otherUsers = useSocketStore((state) => state.otherUsers);
   const emitUpdateLocation = useSocketStore((state) => state.emitUpdateLocation);
@@ -213,8 +213,7 @@ export default function MapComponent({ className }: MapComponentProps) {
     if (!lastRightClickCoords || !mapRef.current) return;
 
     // Set selected location and open form
-    setSelectedLocation(lastRightClickCoords);
-    setEventFormOpen(true);
+    openEventForm(lastRightClickCoords);
 
     // Create and store the new selection marker
     if (selectionMarkerRef.current) {

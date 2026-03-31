@@ -114,6 +114,14 @@ export default function EventInformation() {
                                 <Edit3 className="w-4 h-4" /> Editar Evento
                             </Button>
                         )}
+                        {!isOwner && (
+                            <Button
+                                onClick={() => setEventInfoOpen(false)}
+                                className={`font-semibold transition-transform active:scale-[0.98] py-6 rounded-xl ${isOwner ? 'w-1/3' : 'flex-1'}`}
+                            >
+                                Asistir
+                            </Button>
+                        )}
                         <Button
                             variant="outline"
                             onClick={() => setEventInfoOpen(false)}
@@ -121,6 +129,7 @@ export default function EventInformation() {
                         >
                             Cerrar
                         </Button>
+
                     </CardFooter>
                 </Card>
             </div>
