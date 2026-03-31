@@ -39,6 +39,11 @@ export function startTour() {
         element: '[data-step="6"]',
         intro: "Si alguna vez te pierdes, siempre puedes volver a iniciar esta guía aquí.",
         position: 'bottom'
+      },
+      {
+        element: '.maplibregl-ctrl-geolocate',
+        intro: "Haz clic en este botón para centrar el mapa en tu ubicación actual.",
+        position: 'left'
       }
     ],
     nextLabel: "Siguiente",
@@ -51,7 +56,7 @@ export function startTour() {
     scrollToElement: true,
     overlayOpacity: 0.8,
   });
-  
+
   tour.start();
 }
 

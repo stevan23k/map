@@ -46,8 +46,10 @@ interface RouteState {
   mapCenter: [number, number]; // [lng, lat] — for Photon biasing
   /** Last location picked from GlobalSearchBar — ready for the backend */
   selectedLocation: SelectedLocation | null;
+  userLocation: [number, number] | null; // [lng, lat]
 
   // Actions
+  setUserLocation: (lngLat: [number, number] | null) => void;
   addWaypoint: (lngLat: [number, number], displayText?: string, streetName?: string) => void;
   updateWaypointLngLat: (index: number, lngLat: [number, number], displayText?: string, streetName?: string) => void;
   updateWaypointText: (index: number, text: string) => void;
@@ -76,6 +78,7 @@ export const useRouteStore = create<RouteState>((set) => ({
   pendingFlyTo: null,
   mapCenter: [-74.7813, 10.9685], // Barranquilla default
   selectedLocation: null,
+  userLocation: null,
 
   addWaypoint: (lngLat, displayText, streetName) =>
     set((state) => ({
@@ -152,4 +155,5 @@ export const useRouteStore = create<RouteState>((set) => ({
   consumePendingFlyTo: () => set({ pendingFlyTo: null }),
   setMapCenter: (lngLat) => set({ mapCenter: lngLat }),
   setSelectedLocation: (loc) => set({ selectedLocation: loc }),
+  setUserLocation: (lngLat) => set({ userLocation: lngLat }),
 }));

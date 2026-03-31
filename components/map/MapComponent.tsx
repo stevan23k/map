@@ -46,8 +46,8 @@ function getHaversineDistance(lon1: number, lat1: number, lon2: number, lat2: nu
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 // Ultimate fallback: straight line geometry + math estimation
@@ -56,10 +56,10 @@ function generateMathematicalFallback(waypoints: [number, number][]): OSRMResult
   for (let i = 0; i < waypoints.length - 1; i++) {
     totalDistanceDescKm += getHaversineDistance(
       waypoints[i][0], waypoints[i][1],
-      waypoints[i+1][0], waypoints[i+1][1]
+      waypoints[i + 1][0], waypoints[i + 1][1]
     );
   }
-  
+
   // Real world factor (curves/blocks)
   const drivingDistance = totalDistanceDescKm * 1.5;
   // Assume city traffic average: 30km/h = 2 min per km
@@ -78,7 +78,7 @@ async function fetchOSRMRoute(
   profile: OSRMProfile = "driving"
 ): Promise<OSRMResult> {
   const coords = waypoints.map(([lng, lat]) => `${lng},${lat}`).join(";");
-  
+
   // ── Engine 1: OSRM Public (4s timeout) ──────────────────────────────────
   try {
     const base = OSRM_ENDPOINTS[profile];
@@ -233,11 +233,13 @@ export default function MapComponent({ className }: MapComponentProps) {
           styleLoadedRef.current = true;
         });
 
-        // Geolocation for socket emission
+        // Geolocation for socket emission and local store
         if (navigator.geolocation) {
           navigator.geolocation.watchPosition(
             (pos) => {
+              const lngLat: [number, number] = [pos.coords.longitude, pos.coords.latitude];
               emitUpdateLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+              useRouteStore.getState().setUserLocation(lngLat);
             },
             undefined,
             { enableHighAccuracy: true }
@@ -248,6 +250,17 @@ export default function MapComponent({ className }: MapComponentProps) {
         map.on("moveend", () => {
           const c = map.getCenter();
           useRouteStore.getState().setMapCenter([c.lng, c.lat]);
+        });
+
+        map.on("load", () => {
+          map.addControl(
+            new maplibregl.GeolocateControl({
+              positionOptions: { enableHighAccuracy: true },
+              trackUserLocation: true,
+              showUserLocation: true,
+            }),
+            "bottom-right"
+          );
         });
 
         map.on("click", (e) => {
