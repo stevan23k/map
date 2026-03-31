@@ -4,7 +4,7 @@ import introJs from "intro.js";
 import { useEffect } from "react";
 
 export function startTour() {
-  const tour = introJs();
+  const tour = introJs.tour();
   tour.setOptions({
     steps: [
       {

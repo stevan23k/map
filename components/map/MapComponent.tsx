@@ -252,17 +252,6 @@ export default function MapComponent({ className }: MapComponentProps) {
           useRouteStore.getState().setMapCenter([c.lng, c.lat]);
         });
 
-        map.on("load", () => {
-          map.addControl(
-            new maplibregl.GeolocateControl({
-              positionOptions: { enableHighAccuracy: true },
-              trackUserLocation: true,
-              showUserLocation: true,
-            }),
-            "bottom-right"
-          );
-        });
-
         map.on("click", (e) => {
           const routingActive = useRouteStore.getState().isRoutingMode;
           if (!routingActive) return;
