@@ -136,7 +136,7 @@ export default function GlobalSearchBar() {
 
       {/* Suggestions dropdown */}
       {showDropdown && (
-        <ul className="absolute top-full left-0 w-full mt-2 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden border border-zinc-100 dark:border-zinc-800/50">
+        <ul className="absolute top-full left-0 w-full sm:w-[350px] mt-1.5 bg-white rounded-lg shadow-xl overflow-hidden border border-gray-100 z-50">
           {suggestions.map((result, idx) => (
             <li
               key={idx}

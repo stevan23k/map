@@ -70,17 +70,17 @@ export default function EventInformation() {
 
     return (
         <>
-            <div className="absolute top-20 right-8 z-20 p-4">
+            <div className="absolute top-4 sm:top-20 right-4 sm:right-8 z-30 sm:z-20">
                 <Button
                     variant="outline"
                     onClick={() => setEventInfoOpen(false)}
-                    className="w-10 h-10 p-1 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                    className="w-10 h-10 p-1 rounded-full bg-background/80 backdrop-blur hover:bg-muted transition-colors text-muted-foreground hover:text-foreground shadow-sm"
                 >
                     <X className="w-5 h-5" />
                 </Button>
             </div>
-            <div className="absolute top-20 right-8 z-10">
-                <Card className="max-w-md w-[380px] h-auto max-h-[85vh] flex flex-col overflow-hidden shadow-2xl border-muted/50 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+            <div className="fixed sm:absolute bottom-0 sm:bottom-auto sm:top-20 right-0 sm:right-8 z-20 w-full sm:w-[380px]">
+                <Card className="w-full h-auto max-h-[85vh] sm:max-h-[85vh] flex flex-col overflow-hidden shadow-2xl border-muted/50 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 rounded-t-3xl sm:rounded-xl">
                     <Field className="relative">
                         <div className="w-full h-40 bg-muted/40 flex flex-col items-center justify-center relative border-b">
                             <div className="absolute inset-0 bg-linear-to-t from-background/80 to-transparent z-0" />
