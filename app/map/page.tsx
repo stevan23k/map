@@ -7,7 +7,11 @@ import EventInformation from "@/components/map/EventInformation";
 import MapHeader from "@/components/map/Header";
 import RoutePanel from "@/components/map/RoutePanel";
 import GlobalSearchBar from "@/components/map/GlobalSearchBar";
-import IntroTour from "@/components/map/IntroTour";
+import dynamic from "next/dynamic";
+
+const IntroTour = dynamic(() => import("@/components/map/IntroTour"), {
+  ssr: false,
+});
 
 export default function MapPage() {
   return (

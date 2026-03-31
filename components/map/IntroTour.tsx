@@ -1,10 +1,12 @@
 "use client";
 
-import introJs from "intro.js";
 import { useEffect } from "react";
 
-export function startTour() {
+export async function startTour() {
+  // Dynamic import of intro.js to avoid "document is not defined" during SSR
+  const introJs = (await import("intro.js")).default;
   const tour = introJs.tour();
+  
   tour.setOptions({
     steps: [
       {
@@ -61,18 +63,17 @@ export function startTour() {
 }
 
 export default function IntroTour() {
-  // This component doesn't render anything, it just provides the logic
-  // and could potentially auto-start for new users in the future.
   useEffect(() => {
     // Check localStorage to auto-start once
-    const hasSeenTour = localStorage.getItem("has-seen-tour");
-    if (!hasSeenTour) {
-      // Small delay to ensure map and other components are fully rendered
-      const timer = setTimeout(() => {
-        startTour();
-        localStorage.setItem("has-seen-tour", "true");
-      }, 1500);
-      return () => clearTimeout(timer);
+    if (typeof window !== "undefined") {
+      const hasSeenTour = localStorage.getItem("has-seen-tour");
+      if (!hasSeenTour) {
+        const timer = setTimeout(() => {
+          startTour();
+          localStorage.setItem("has-seen-tour", "true");
+        }, 1500);
+        return () => clearTimeout(timer);
+      }
     }
   }, []);
 
