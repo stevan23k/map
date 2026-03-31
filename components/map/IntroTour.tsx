@@ -19,7 +19,7 @@ export async function startTour() {
       },
       {
         element: '[data-step="2"]',
-        intro: "Este es el mapa interactivo. Puedes ver eventos activos y a otros usuarios en tiempo real.",
+        intro: "Este es el mapa interactivo. Puedes ver eventos activos en tiempo real.",
         position: 'right'
       },
       {

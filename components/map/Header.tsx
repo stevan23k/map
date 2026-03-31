@@ -28,11 +28,19 @@ export default function MapHeader() {
                 <div className="flex items-center gap-3 justify-end">
                     {/* Connection status */}
                     <div
-                        className="flex items-center gap-2"
+                        className={`flex items-center gap-2 ${!isConnected ? "cursor-pointer hover:opacity-80 active:scale-95 transition-all" : ""}`}
+                        onClick={() => {
+                            if (!isConnected) {
+                                const { socket, connect } = useSocketStore.getState();
+                                if (socket) socket.connect();
+                                else connect();
+                            }
+                        }}
+                        title={!isConnected ? "Haz clic para reconectar" : "Conexión estable"}
                         data-intro="Verifica aquí si estás conectado en tiempo real para recibir actualizaciones."
                         data-step="4"
                     >
-                        <div className={`h-3 w-3 rounded-full shrink-0 ${isConnected ? "bg-green-500" : "bg-red-500"}`} />
+                        <div className={`h-3 w-3 rounded-full shrink-0 ${isConnected ? "bg-green-500" : "bg-red-500 animate-pulse"}`} />
                         <span className={`text-sm font-semibold whitespace-nowrap ${isConnected ? "text-green-500" : "text-red-500"}`}>
                             {isConnected ? "Conectado" : "Desconectado"}
                         </span>
