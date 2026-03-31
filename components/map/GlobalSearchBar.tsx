@@ -136,7 +136,7 @@ export default function GlobalSearchBar() {
 
       {/* Suggestions dropdown */}
       {showDropdown && (
-        <ul className="absolute top-full left-0 w-full sm:w-[350px] mt-1.5 bg-white rounded-lg shadow-xl overflow-hidden border border-gray-100 z-50">
+        <ul className="absolute top-full left-0 w-full sm:w-[350px] mt-1.5 bg-white dark:bg-zinc-800 rounded-lg shadow-xl overflow-hidden border border-gray-100 dark:border-zinc-700 z-50">
           {suggestions.map((result, idx) => (
             <li
               key={idx}
@@ -145,9 +145,9 @@ export default function GlobalSearchBar() {
             >
               <div className="flex items-start gap-3">
                 {result.kind === "place" ? (
-                  <Building2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <Building2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
                 ) : (
-                  <MapPin className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                  <MapPin className="w-4 h-4 text-indigo-500 dark:text-indigo-400 shrink-0 mt-0.5" />
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
