@@ -101,6 +101,13 @@ export default function FormEvents() {
             setDatetime(selectedEvent.datetime);
             setSelectedIcon(selectedEvent.icon);
             setSelectedLocation({ lat: parseFloat(String(selectedEvent.lat)), lng: parseFloat(String(selectedEvent.lng)) });
+        } else if (!selectedEvent && isEventFormOpen) {
+            // Creating a new event — reset all text fields but keep selectedLocation
+            setTitle("");
+            setDescription("");
+            setDatetime("");
+            setSelectedIcon("Map");
+            setErrors({});
         }
     }, [selectedEvent, isEventFormOpen, setSelectedLocation]);
 

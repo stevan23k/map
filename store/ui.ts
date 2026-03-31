@@ -11,6 +11,7 @@ interface UIState {
     setEventInfoOpen: (open: boolean) => void;
     setSelectedLocation: (location: { lng: number; lat: number } | null) => void;
     setSelectedEvent: (event: Event | null) => void;
+    openEventForm: (location?: { lat: number; lng: number } | null) => void;
     resetEventForm: () => void;
 }
 
@@ -35,6 +36,12 @@ export const useUIStore = create<UIState>((set) => ({
         selectedEvent: event,
         isEventInfoOpen: !!event,
         isEventFormOpen: false
+    }),
+    openEventForm: (location) => set({
+        isEventFormOpen: true,
+        isEventInfoOpen: false,
+        selectedEvent: null,
+        selectedLocation: location ?? null,
     }),
     resetEventForm: () => set({
         isEventFormOpen: false,
