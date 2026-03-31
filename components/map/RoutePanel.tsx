@@ -235,7 +235,7 @@ export default function RoutePanel() {
   // ─── Inactive: floating RUTA button ────────────────────────────────────────
   if (!isRoutingMode) {
     return (
-      <div className="fixed bottom-12 left-6 z-10">
+      <div className="fixed bottom-6 sm:bottom-12 left-4 sm:left-6 z-10">
         <button
           onClick={() => setRoutingMode(true)}
           className="bg-white text-indigo-600 font-bold px-4 py-3 rounded-full shadow-lg flex items-center gap-2 hover:bg-gray-50 transition-colors cursor-pointer border border-zinc-200"
@@ -253,7 +253,7 @@ export default function RoutePanel() {
   // ─── Collapsed pill ────────────────────────────────────────────────────────
   if (!isRouteMenuOpen && hasRoute) {
     return (
-      <div className="fixed bottom-12 left-6 z-10">
+      <div className="fixed bottom-6 sm:bottom-12 left-4 sm:left-6 z-10">
         <button
           onClick={() => setRouteMenuOpen(true)}
           className="flex items-center gap-2.5 bg-white rounded-full shadow-lg border border-zinc-200 px-5 py-3 hover:shadow-xl transition-shadow cursor-pointer"
@@ -285,8 +285,8 @@ export default function RoutePanel() {
 
   // ─── Expanded panel ────────────────────────────────────────────────────────
   return (
-    <div className="fixed bottom-6 left-6 z-20 w-[360px]">
-      <div className="bg-white rounded-xl shadow-lg border border-zinc-200 h-auto p-4">
+    <div className="fixed bottom-0 sm:bottom-6 left-0 sm:left-6 z-20 w-full sm:w-[360px]">
+      <div className="bg-white rounded-t-3xl sm:rounded-xl shadow-lg border border-zinc-200 h-auto p-4 sm:p-4 pb-8 sm:pb-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">

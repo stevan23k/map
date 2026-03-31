@@ -10,8 +10,8 @@ export default function MapHeader() {
     const { isConnected } = useSocketStore();
 
     return (
-        <header className="w-full fixed top-0 z-10 flex justify-center px-6">
-            <div className="flex flex-row items-center justify-between w-full max-w-7xl pt-10">
+        <header className="w-full fixed top-0 z-20 flex justify-center px-4 sm:px-6">
+            <div className="flex flex-row items-center justify-between w-full max-w-7xl pt-4 sm:pt-10 gap-2">
 
                 <div className="text-2xl font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-default">
                     <GlobalSearchBar />

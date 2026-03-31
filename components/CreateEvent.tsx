@@ -13,12 +13,12 @@ export default function CreateEvent() {
     return (
 
         !isEventFormOpen ? (
-            <div className="fixed bottom-12 right-15 z-10 flex flex-col gap-3">
+            <div className="fixed bottom-24 sm:bottom-12 right-4 sm:right-8 z-30 flex flex-col gap-3">
                 {/* Help Button */}
                 <Button
                     variant="outline"
                     size="lg"
-                    className="rounded-full cursor-pointer bg-white"
+                    className="rounded-full cursor-pointer bg-white h-12 w-12 sm:h-14 sm:w-14"
                     onClick={() => {
                         import("./map/IntroTour").then(mod => mod.startTour());
                     }}
@@ -33,12 +33,12 @@ export default function CreateEvent() {
                     data-intro="Haz clic aquí para crear un nuevo evento. También puedes hacer clic derecho en cualquier parte del mapa."
                     data-step="3"
                 >
-                    <Button onClick={() => openEventForm()} className="rounded-full cursor-pointer" variant="outline" size="lg"><Plus size={32} /></Button>
+                    <Button onClick={() => openEventForm()} className="rounded-full cursor-pointer h-12 w-12 sm:h-14 sm:w-14" variant="outline" size="lg"><Plus size={32} /></Button>
                 </div>
             </div>
         ) : (
-            <div className="fixed bottom-12 right-15 z-10">
-                <Button onClick={() => setEventFormOpen(false)} className="rounded-full cursor-pointer" variant="outline" size="lg"><X size={32} /></Button>
+            <div className="fixed bottom-24 sm:bottom-12 right-4 sm:right-8 z-30 hidden sm:block">
+                <Button onClick={() => setEventFormOpen(false)} className="rounded-full cursor-pointer h-12 w-12 sm:h-14 sm:w-14" variant="outline" size="lg"><X size={32} /></Button>
             </div>
         )
     )

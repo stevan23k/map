@@ -39,43 +39,43 @@ export default function Profile() {
 
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col">
-            <header className="w-full flex justify-center px-6">
-                <div className="flex items-center justify-between w-full max-w-5xl pt-10">
+            <header className="w-full flex justify-center px-4 sm:px-6">
+                <div className="flex items-center justify-between w-full max-w-5xl pt-4 sm:pt-10">
                     <div>
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                            className="gap-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 px-2 sm:px-4"
                             onClick={() => router.push("/")}
                         >
                             <ArrowLeft className="w-4 h-4" />
-                            Volver al Inicio
+                            <span className="hidden sm:inline">Volver al Inicio</span>
                         </Button>
                     </div>
                     <div>
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="gap-2 text-zinc-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors"
+                            className="gap-2 text-zinc-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors px-2 sm:px-4"
                             onClick={() => {
                                 useAuthStore.getState().logout();
                                 router.push("/");
                             }}
                         >
                             <LogOut className="w-4 h-4" />
-                            Cerrar sesión
+                            <span className="hidden sm:inline">Cerrar sesión</span>
                         </Button>
                     </div>
                 </div>
             </header>
-            <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-12 flex flex-col items-center gap-12">
+            <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-12 flex flex-col items-center gap-6 sm:gap-12">
 
                 <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="text-center space-y-2">
-                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+                        <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
                             Hola, {user?.firstName || user?.username}
                         </h1>
-                        <p className="text-zinc-500 text-lg max-w-lg mx-auto">
+                        <p className="text-zinc-500 text-base sm:text-lg max-w-lg mx-auto px-4">
                             Gestiona tus eventos y revisa a cuáles te has unido desde aquí.
                         </p>
                     </div>
@@ -114,17 +114,17 @@ export default function Profile() {
 
                         {/* Events List section */}
                         <div className="md:col-span-2 space-y-6">
-                            <div className="flex p-1 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-xl w-fit">
+                            <div className="flex p-1 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-xl w-full sm:w-fit overflow-x-auto">
                                 <Button
                                     variant={filter === 'created' ? 'default' : 'ghost'}
-                                    className={`rounded-lg px-6 transition-all ${filter === 'created' ? 'shadow-sm' : 'text-zinc-500'}`}
+                                    className={`flex-1 sm:flex-none rounded-lg px-3 sm:px-6 transition-all text-xs sm:text-sm ${filter === 'created' ? 'shadow-sm' : 'text-zinc-500'}`}
                                     onClick={() => setFilter('created')}
                                 >
                                     Mis Eventos ({createdEvents.length})
                                 </Button>
                                 <Button
                                     variant={filter === 'attending' ? 'default' : 'ghost'}
-                                    className={`rounded-lg px-6 transition-all ${filter === 'attending' ? 'shadow-sm' : 'text-zinc-500'}`}
+                                    className={`flex-1 sm:flex-none rounded-lg px-3 sm:px-6 transition-all text-xs sm:text-sm ${filter === 'attending' ? 'shadow-sm' : 'text-zinc-500'}`}
                                     onClick={() => setFilter('attending')}
                                 >
                                     Asistiendo ({attendingEvents.length})

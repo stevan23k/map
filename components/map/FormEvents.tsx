@@ -226,18 +226,17 @@ export default function FormEvents() {
 
     return (
         <>
-            <div className="absolute top-20 right-8 z-20 p-4">
+            <div className="absolute top-4 sm:top-20 right-4 sm:right-8 z-30 sm:z-20">
                 <Button
                     variant="outline"
                     onClick={() => setEventFormOpen(false)}
-                    className=" w-10 h-10 p-1 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                    className="w-10 h-10 p-1 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                 >
                     <X className="w-5 h-5" />
                 </Button>
             </div>
-            <div className="absolute top-20 right-8 z-10">
-
-                <Card size="default" className="max-w-md w-[380px] h-auto max-h-[85vh] flex flex-col overflow-hidden shadow-2xl border-muted/50 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+            <div className="fixed sm:absolute bottom-0 sm:bottom-auto sm:top-20 right-0 sm:right-8 z-20 w-full sm:w-[380px]">
+                <Card size="default" className="w-full h-auto max-h-[85vh] sm:max-h-[85vh] flex flex-col overflow-hidden shadow-2xl border-muted/50 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 rounded-t-3xl sm:rounded-xl">
                     {/* Header Image Area */}
                     <Field className="relative">
                         <label htmlFor="picture" className="w-full h-36 bg-muted/40 flex flex-col items-center justify-center relative group cursor-pointer border-b hover:bg-muted/60 transition-colors">
@@ -427,14 +426,14 @@ export default function FormEvents() {
                         </form>
                     </CardContent>
 
-                    <CardFooter className="pt-4 mt-auto border-t flex flex-wrap gap-2">
+                    <CardFooter className="pt-4 pb-6 sm:pb-4 mt-auto border-t flex flex-wrap gap-2">
                         {selectedEvent ? (
                             <Button
                                 type="button"
                                 variant="destructive"
                                 onClick={handleDelete}
                                 disabled={isSubmitting}
-                                className="flex-1 font-semibold transition-transform active:scale-[0.98] gap-2 min-w-[100px]"
+                                className="flex-1 font-semibold transition-transform active:scale-[0.98] gap-2 min-w-[120px]"
                             >
                                 <Trash className="w-4 h-4" /> Eliminar
                             </Button>
@@ -443,7 +442,7 @@ export default function FormEvents() {
                                 type="button"
                                 variant="outline"
                                 onClick={handleReset}
-                                className="flex-1 font-semibold transition-transform active:scale-[0.98] gap-2 min-w-[100px]"
+                                className="flex-1 font-semibold transition-transform active:scale-[0.98] gap-2 min-w-[120px]"
                             >
                                 <RotateCcw className="w-4 h-4" /> Limpiar
                             </Button>
@@ -452,7 +451,7 @@ export default function FormEvents() {
                             onClick={handleSubmit}
                             type="button"
                             disabled={isSubmitting}
-                            className="flex-[2] font-semibold shadow-sm transition-transform active:scale-[0.98] relative min-w-[150px]"
+                            className="flex-2 font-semibold shadow-sm transition-transform active:scale-[0.98] relative min-w-[160px]"
                         >
                             {isSubmitting ? (
                                 <span className="flex items-center gap-2">
