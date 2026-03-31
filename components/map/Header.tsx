@@ -17,21 +17,29 @@ export default function MapHeader() {
                     <GlobalSearchBar />
                 </div>
 
-                {/* Status + Avatar — text first, avatar rightmost */}
+                {/* Status + Help + Avatar — text first, avatar rightmost */}
                 <div className="flex items-center gap-3 justify-end">
                     {/* Connection status */}
-                    <div className="flex items-center gap-2">
-                        <div className={`h-3 w-3 rounded-full flex-shrink-0 ${isConnected ? "bg-green-500" : "bg-red-500"}`} />
+                    <div
+                        className="flex items-center gap-2"
+                        data-intro="Verifica aquí si estás conectado en tiempo real para recibir actualizaciones."
+                        data-step="4"
+                    >
+                        <div className={`h-3 w-3 rounded-full shrink-0 ${isConnected ? "bg-green-500" : "bg-red-500"}`} />
                         <span className={`text-sm font-semibold whitespace-nowrap ${isConnected ? "text-green-500" : "text-red-500"}`}>
                             {isConnected ? "Conectado" : "Desconectado"}
                         </span>
                     </div>
+
+
                     {/* Avatar — always rightmost, never pushed */}
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="flex-shrink-0 rounded-full cursor-pointer h-10 w-10"
+                        className="shrink-0 rounded-full cursor-pointer h-10 w-10"
                         onClick={() => router.push("/profile")}
+                        data-intro="Accede a tu perfil para gestionar tus eventos y configuración."
+                        data-step="5"
                     >
                         <User size={32} />
                     </Button>

@@ -106,7 +106,11 @@ export default function GlobalSearchBar() {
   return (
     <div ref={containerRef} className="relative">
       {/* Search bar */}
-      <div className="flex items-center bg-white rounded-lg shadow-lg px-3 py-2.5 border border-zinc-200">
+      <div 
+        className="flex items-center bg-white rounded-lg shadow-lg px-3 py-2.5 border border-zinc-200"
+        data-intro="Escribe aquí para buscar cualquier lugar o evento en la ciudad."
+        data-step="1"
+      >
         {isSearching ? (
           <Search className="w-4 h-4 text-indigo-400 shrink-0 animate-pulse" />
         ) : (

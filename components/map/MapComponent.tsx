@@ -530,6 +530,8 @@ export default function MapComponent({ className }: MapComponentProps) {
           ref={containerRef}
           className={className ?? "w-full h-full"}
           aria-label="Mapa interactivo de Barranquilla"
+          data-intro="Este es tu mapa interactivo. Puedes ver eventos, usuarios en tiempo real y navegar por la ciudad."
+          data-step="2"
         />
       </ContextMenuTrigger>
       {user && (

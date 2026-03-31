@@ -7,10 +7,12 @@ import EventInformation from "@/components/map/EventInformation";
 import MapHeader from "@/components/map/Header";
 import RoutePanel from "@/components/map/RoutePanel";
 import GlobalSearchBar from "@/components/map/GlobalSearchBar";
+import IntroTour from "@/components/map/IntroTour";
 
 export default function MapPage() {
   return (
     <>
+      <IntroTour />
       <MapHeader />
       <main className="w-screen h-screen overflow-hidden">
         <DynamicMap className="w-full h-full" />

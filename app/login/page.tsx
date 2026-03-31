@@ -15,7 +15,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const { user, isLoading, login } = useAuthStore();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -54,11 +54,11 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4 relative">
-      <Button 
-        variant="ghost" 
-        size="sm" 
+      <Button
+        variant="ghost"
+        size="sm"
         className="absolute top-6 left-6 gap-2 text-zinc-500"
-        onClick={() => router.back()}
+        onClick={() => router.push("/map")}
       >
         <ArrowLeft className="w-4 h-4" />
         Volver
