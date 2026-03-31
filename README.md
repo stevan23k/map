@@ -16,6 +16,15 @@ Plataforma interactiva de visualización geoespacial y navegación, diseñada co
 - Experiencia de usuario fluida y moderna
 
 ---
+## Próximas Implementaciones
+-Integrar trayectos de movilidad pública y alternativa,
+el sistema compararía la ubicación del usuario
+con la parada de bus más cercana 
+
+-Disponibilidad Real (Negocios Abiertos)
+es un filtro de visualización dinámico que oculta los lugares
+que no están prestando servicio en el momento exacto en que el
+usuario consulta el mapa.
 
 ## Stack Tecnológico
 
