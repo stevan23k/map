@@ -163,7 +163,6 @@ export default function MapComponent({ className }: MapComponentProps) {
 
   // Refs to track dynamic markers
   const eventMarkersRef = useRef<Record<string, maplibregl.Marker>>({});
-  const userMarkersRef = useRef<Record<string, maplibregl.Marker>>({});
   const [mapLoaded, setMapLoaded] = useState(false);
   const [lastRightClickCoords, setLastRightClickCoords] = useState<{ lng: number, lat: number } | null>(null);
 
@@ -175,7 +174,6 @@ export default function MapComponent({ className }: MapComponentProps) {
 
   const { setEventFormOpen, setSelectedLocation, isEventFormOpen, selectedLocation, setSelectedEvent, openEventForm, mapView, setMapView } = useUIStore();
   const events = useSocketStore((state) => state.events);
-  const otherUsers = useSocketStore((state) => state.otherUsers);
   const emitUpdateLocation = useSocketStore((state) => state.emitUpdateLocation);
 
   // Route store
@@ -341,7 +339,6 @@ export default function MapComponent({ className }: MapComponentProps) {
 
       // Cleanup dynamic markers
       Object.values(eventMarkersRef.current).forEach(m => m.remove());
-      Object.values(userMarkersRef.current).forEach(m => m.remove());
       routeMarkersRef.current.forEach(m => m.remove());
     };
   }, []);
@@ -549,41 +546,6 @@ export default function MapComponent({ className }: MapComponentProps) {
     });
   }, [events, mapLoaded]);
 
-  // Sync Other User Markers
-  useEffect(() => {
-    if (!mapRef.current || !mapLoaded) return;
-
-    Object.values(otherUsers).forEach(userData => {
-      if (!userMarkersRef.current[userData.userId]) {
-        const el = document.createElement('div');
-        el.className = 'w-8 h-8 flex items-center justify-center bg-blue-500 text-white rounded-full shadow-md border-2 border-white';
-
-        const root = createRoot(el);
-        root.render(React.createElement(LucideIcons.User, { size: 16 }));
-
-        const marker = new maplibregl.Marker({ element: el })
-          .setLngLat([userData.lng, userData.lat])
-          .setPopup(new maplibregl.Popup({ offset: 25 })
-            .setHTML(`<strong>${userData.username}</strong>`)
-          )
-          .addTo(mapRef.current!);
-
-        userMarkersRef.current[userData.userId] = marker;
-      } else {
-        // Update existing marker position
-        userMarkersRef.current[userData.userId].setLngLat([userData.lng, userData.lat]);
-      }
-    });
-
-    // Remove inactive users
-    const userIds = new Set(Object.keys(otherUsers));
-    Object.keys(userMarkersRef.current).forEach(id => {
-      if (!userIds.has(id)) {
-        userMarkersRef.current[id].remove();
-        delete userMarkersRef.current[id];
-      }
-    });
-  }, [otherUsers, mapLoaded]);
 
   return (
     <ContextMenu>
@@ -592,7 +554,7 @@ export default function MapComponent({ className }: MapComponentProps) {
           ref={containerRef}
           className={className ?? "w-full h-full"}
           aria-label="Mapa interactivo de Barranquilla"
-          data-intro="Este es tu mapa interactivo. Puedes ver eventos, usuarios en tiempo real y navegar por la ciudad."
+          data-intro="Este es tu mapa interactivo. Puedes ver eventos en tiempo real y navegar por la ciudad."
           data-step="2"
         />
       </ContextMenuTrigger>
