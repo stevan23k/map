@@ -151,7 +151,7 @@ export const useRouteStore = create<RouteState>((set) => ({
           }),
     }),
   setTransportMode: (mode) => set({ transportMode: mode, routeInfo: null }),
-  setPendingFlyTo: (lngLat, zoom = 14) => set({ pendingFlyTo: { center: lngLat, zoom } }),
+  setPendingFlyTo: (lngLat, zoom = 18) => set({ pendingFlyTo: { center: lngLat, zoom } }),
   consumePendingFlyTo: () => set({ pendingFlyTo: null }),
   setMapCenter: (lngLat) => set({ mapCenter: lngLat }),
   setSelectedLocation: (loc) => set({ selectedLocation: loc }),

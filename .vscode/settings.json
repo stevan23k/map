@@ -1,0 +1,11 @@
+{
+  "css.customData": [],
+  "css.validate": false,
+  "less.validate": false,
+  "scss.validate": false,
+  "[css]": {
+    "editor.quickSuggestions": {
+      "strings": true
+    }
+  }
+}

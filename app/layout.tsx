@@ -6,6 +6,8 @@ import { AuthInitializer } from "@/components/AuthInitializer";
 import { SocketInitializer } from "@/components/SocketInitializer";
 
 
+import { ThemeProvider } from "@/components/ThemeProvider";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -29,12 +31,15 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased suppressHydrationWarning`}
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <AuthInitializer>
-          <SocketInitializer>{children}</SocketInitializer>
-        </AuthInitializer>
+        <ThemeProvider>
+          <AuthInitializer>
+            <SocketInitializer>{children}</SocketInitializer>
+          </AuthInitializer>
+        </ThemeProvider>
       </body>
     </html>
   );
