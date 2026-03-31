@@ -594,9 +594,9 @@ export function zoomForPlaceType(placeType: string): number {
     case "street":
     case "district":
     case "locality":
-      return 15.5;
+      return 18;
     default:
-      return 16;
+      return 18;
   }
 }
 

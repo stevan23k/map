@@ -8,6 +8,7 @@ import MapHeader from "@/components/map/Header";
 import RoutePanel from "@/components/map/RoutePanel";
 import GlobalSearchBar from "@/components/map/GlobalSearchBar";
 import dynamic from "next/dynamic";
+import MyLocationButton from "@/components/map/MyLocationButton";
 
 const IntroTour = dynamic(() => import("@/components/map/IntroTour"), {
   ssr: false,
@@ -18,13 +19,14 @@ export default function MapPage() {
     <>
       <IntroTour />
       <MapHeader />
-      <main className="w-screen h-screen overflow-hidden">
+      <main className="w-screen h-screen overflow-hidden relative">
         <DynamicMap className="w-full h-full" />
         <GlobalSearchBar />
         <CreateEvent />
         <FormEvents />
         <EventInformation />
         <RoutePanel />
+        <MyLocationButton />
       </main>
     </>
   );

@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 
 // ─── Hybrid geocoding ────────────────────────────────────────────────────────
-import { hybridGeocode, zoomForPlaceType, rankByRelevance, type GeoResult, type GeocodingBias } from "@/lib/geocoding";
+import { hybridGeocode, zoomForPlaceType, rankByRelevance, reverseGeocode, type GeoResult, type GeocodingBias } from "@/lib/geocoding";
 
 // ─── Transport options ───────────────────────────────────────────────────────
 const TRANSPORT_OPTIONS: {
@@ -145,33 +145,33 @@ function AutocompleteInput({
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => setIsFocused(true)}
           placeholder={placeholder}
-          className="w-full bg-zinc-100 border border-transparent focus:border-indigo-500 focus:bg-white rounded-lg px-3 py-2 text-sm text-zinc-700 placeholder:text-zinc-400 outline-none transition-colors"
+          className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-transparent focus:border-indigo-500 focus:bg-white dark:focus:bg-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none transition-colors"
         />
         {isSpinning && (
           <Loader2 className="w-3.5 h-3.5 text-indigo-500 absolute right-2.5 top-1/2 -translate-y-1/2 animate-spin" />
         )}
         {/* Suggestions dropdown */}
         {showSuggestions && (
-          <ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-xl mt-1 max-h-60 overflow-y-auto">
+          <ul className="absolute z-50 w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-xl mt-1 max-h-60 overflow-y-auto">
             {suggestions.map((result, idx) => (
               <li
                 key={idx}
                 onClick={() => handleSelect(result)}
-                className="px-4 py-3 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-0 text-sm flex items-start gap-2.5 transition-colors"
+                className="px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 cursor-pointer border-b border-gray-100 dark:border-zinc-700 last:border-0 text-sm flex items-start gap-2.5 transition-colors"
               >
                 <MapPin className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-zinc-800 truncate">
+                    <span className="font-semibold text-zinc-800 dark:text-zinc-200 truncate">
                       {result.streetName}
                     </span>
                     {result.source === "mapbox" && (
-                      <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-indigo-500 bg-indigo-50 rounded px-1 py-0.5">
+                      <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-500/20 rounded px-1.5 py-0.5">
                         Exacta
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-zinc-400 truncate block">
+                  <span className="text-xs text-zinc-400 dark:text-zinc-500 truncate block">
                     {result.subtitle}
                   </span>
                 </div>
@@ -232,16 +232,38 @@ export default function RoutePanel() {
     setPendingFlyTo(lngLat, zoomForPlaceType("address"));
   };
 
+  const handleUseMyLocationForOrigin = () => {
+    if (!navigator.geolocation) {
+      alert("Tu navegador no soporta geolocalización.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lngLat: [number, number] = [pos.coords.longitude, pos.coords.latitude];
+        const streetName = (await reverseGeocode(lngLat)) || "Mi ubicación";
+        
+        if (waypoints.length >= 1) {
+          handleSelectExisting(0, lngLat, streetName, streetName);
+        } else {
+          handleSelectNew(lngLat, streetName, streetName, () => setOriginText(""));
+        }
+      },
+      () => alert("No pudimos acceder a tu ubicación. Verifica tus permisos."),
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
+  };
+
   // ─── Inactive: floating RUTA button ────────────────────────────────────────
   if (!isRoutingMode) {
     return (
       <div className="fixed bottom-12 left-6 z-10">
         <button
           onClick={() => setRoutingMode(true)}
-          className="bg-white text-indigo-600 font-bold px-4 py-3 rounded-full shadow-lg flex items-center gap-2 hover:bg-gray-50 transition-colors cursor-pointer border border-zinc-200"
+          className="bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md text-indigo-600 dark:text-indigo-400 font-bold px-5 py-3.5 rounded-full shadow-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-zinc-700/90 transition-all cursor-pointer border border-zinc-200 dark:border-zinc-700"
         >
           <Navigation size={18} />
-          <span className="text-sm">RUTA</span>
+          <span className="text-sm tracking-wide">RUTA</span>
         </button>
       </div>
     );
@@ -256,7 +278,7 @@ export default function RoutePanel() {
       <div className="fixed bottom-12 left-6 z-10">
         <button
           onClick={() => setRouteMenuOpen(true)}
-          className="flex items-center gap-2.5 bg-white rounded-full shadow-lg border border-zinc-200 px-5 py-3 hover:shadow-xl transition-shadow cursor-pointer"
+          className="flex items-center gap-2.5 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 px-5 py-3 hover:shadow-xl transition-shadow cursor-pointer"
         >
           {transportMode === "driving" && (
             <Car className="w-4 h-4 text-indigo-600" />
@@ -267,12 +289,12 @@ export default function RoutePanel() {
           {transportMode === "foot" && (
             <Footprints className="w-4 h-4 text-indigo-600" />
           )}
-          <span className="text-sm font-bold text-zinc-800">
+          <span className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
             {routeInfo.duration}
           </span>
-          <span className="text-xs text-zinc-300">|</span>
-          <span className="text-sm text-zinc-500">{routeInfo.distance}</span>
-          <ChevronUp className="w-3.5 h-3.5 text-zinc-400" />
+          <span className="text-xs text-zinc-300 dark:text-zinc-600">|</span>
+          <span className="text-sm text-zinc-500 dark:text-zinc-400">{routeInfo.distance}</span>
+          <ChevronUp className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
         </button>
       </div>
     );
@@ -286,26 +308,26 @@ export default function RoutePanel() {
   // ─── Expanded panel ────────────────────────────────────────────────────────
   return (
     <div className="fixed bottom-6 left-6 z-20 w-[360px]">
-      <div className="bg-white rounded-xl shadow-lg border border-zinc-200 h-auto p-4">
+      <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 h-auto p-5 transition-colors">
         {/* Header */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Route className="w-4 h-4 text-indigo-600" />
-            <h3 className="text-sm font-bold text-zinc-800 tracking-tight">
+            <Route className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200 tracking-tight">
               Planificar ruta
             </h3>
           </div>
           <button
             onClick={() => setRoutingMode(false)}
-            className="w-7 h-7 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center rounded-full text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
           >
-            <X className="w-4 h-4" />
+            <X size={16} />
           </button>
         </div>
 
         {/* Transport selector */}
         <div className="mb-3">
-          <div className="flex gap-1 bg-zinc-100 rounded-lg p-1">
+          <div className="flex gap-1 bg-zinc-100 dark:bg-zinc-800/50 rounded-lg p-1">
             {TRANSPORT_OPTIONS.map(({ mode, label, icon: Icon }) => {
               const isActive = transportMode === mode;
               return (
@@ -314,8 +336,8 @@ export default function RoutePanel() {
                   onClick={() => setTransportMode(mode)}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                     isActive
-                      ? "bg-white text-indigo-600 shadow-sm"
-                      : "text-zinc-500 hover:text-zinc-700"
+                      ? "bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                      : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -350,7 +372,7 @@ export default function RoutePanel() {
             rightSlot={
               <>
                 <button
-                  onClick={() => console.log("Obtener ubicación")}
+                  onClick={handleUseMyLocationForOrigin}
                   title="Usar mi ubicación"
                   className="w-7 h-7 flex items-center justify-center rounded-full text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer shrink-0"
                 >

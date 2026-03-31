@@ -132,6 +132,10 @@ const BARRANQUILLA_CENTER: [number, number] = [-74.7813, 10.9685];
 const DEFAULT_ZOOM = 14;
 const CARTO_VOYAGER_STYLE =
   "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
+const CARTO_DARK_MATTER_STYLE =
+  "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
+
+import { useThemeStore } from "@/store/themeStore";
 
 interface MapComponentProps {
   className?: string;
@@ -141,6 +145,21 @@ export default function MapComponent({ className }: MapComponentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const selectionMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const theme = useThemeStore(state => state.theme);
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+
+  // Resolve current theme
+  useEffect(() => {
+    const isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    setResolvedTheme(isDark ? 'dark' : 'light');
+    
+    if (theme === "system") {
+      const matcher = window.matchMedia("(prefers-color-scheme: dark)");
+      const onChange = (e: MediaQueryListEvent) => setResolvedTheme(e.matches ? 'dark' : 'light');
+      matcher.addEventListener('change', onChange);
+      return () => matcher.removeEventListener('change', onChange);
+    }
+  }, [theme]);
 
   // Refs to track dynamic markers
   const eventMarkersRef = useRef<Record<string, maplibregl.Marker>>({});
@@ -204,11 +223,29 @@ export default function MapComponent({ className }: MapComponentProps) {
     }
   }, [isRoutingMode]);
 
+  // Style changer
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+    const styleUrl = resolvedTheme === "dark" ? CARTO_DARK_MATTER_STYLE : CARTO_VOYAGER_STYLE;
+    
+    fetch(styleUrl)
+      .then((r) => r.json())
+      .then((styleJson) => {
+        styleJson.projection = styleJson.projection || { type: "mercator" };
+        mapRef.current?.setStyle(styleJson);
+      });
+  }, [resolvedTheme, mapLoaded]);
+
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    // Obtener estilo instanciado de una vez para evitar flash
+    const initialStyleUrl = resolvedTheme === "dark" 
+      ? CARTO_DARK_MATTER_STYLE 
+      : CARTO_VOYAGER_STYLE;
+
     // Fetch style and inject projection for MapLibre v5 compatibility
-    fetch(CARTO_VOYAGER_STYLE)
+    fetch(initialStyleUrl)
       .then((r) => r.json())
       .then((styleJson) => {
         if (!containerRef.current) return;
