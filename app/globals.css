@@ -128,3 +128,36 @@
     @apply font-sans;
   }
 }
+
+/* MapLibre UI Dark Mode Overrides */
+.dark .maplibregl-ctrl-group {
+  background-color: oklch(0.205 0 0 / 0.9) !important;
+  border-color: oklch(0.269 0 0) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+.dark .maplibregl-ctrl-group button {
+  border-bottom-color: oklch(0.269 0 0) !important;
+}
+.dark .maplibregl-ctrl-group button:last-child {
+  border-bottom: none !important;
+}
+.dark .maplibregl-ctrl-icon {
+  filter: invert(1) brightness(0.8) contrast(1.2) !important;
+}
+
+/* Fix for Attribution (Contributors) */
+.dark .maplibregl-ctrl.maplibregl-ctrl-attrib,
+.dark .maplibregl-ctrl-attrib-inner {
+  background-color: oklch(0.145 0 0 / 0.85) !important;
+  color: oklch(0.708 0 0) !important;
+}
+.dark .maplibregl-ctrl-attrib a {
+  color: oklch(0.87 0 0) !important;
+}
+.dark .maplibregl-ctrl-attrib a:hover {
+  color: oklch(0.985 0 0) !important;
+}
+.dark .maplibregl-ctrl-attrib-button {
+  background-color: transparent !important;
+  filter: invert(1) brightness(0.8) contrast(1.2) !important;
+}

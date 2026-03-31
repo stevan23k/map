@@ -104,17 +104,17 @@ export default function GlobalSearchBar() {
   const showDropdown = isFocused && suggestions.length > 0;
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative w-full max-w-lg">
       {/* Search bar */}
-      <div 
-        className="flex items-center bg-white rounded-lg shadow-lg px-3 py-2.5 border border-zinc-200"
+      <div
+        className="flex items-center bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md rounded-full shadow-lg px-4 py-3 border border-zinc-200 dark:border-zinc-800 transition-colors"
         data-intro="Escribe aquí para buscar cualquier lugar o evento en la ciudad."
         data-step="1"
       >
         {isSearching ? (
-          <Search className="w-4 h-4 text-indigo-400 shrink-0 animate-pulse" />
+          <Search className="w-[18px] h-[18px] text-indigo-500 shrink-0 animate-pulse" />
         ) : (
-          <Search className="w-4 h-4 text-gray-400 shrink-0" />
+          <Search className="w-[18px] h-[18px] text-zinc-400 dark:text-zinc-500 shrink-0" />
         )}
         <input
           type="text"
@@ -122,45 +122,45 @@ export default function GlobalSearchBar() {
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => setIsFocused(true)}
           placeholder="Buscar en Barranquilla..."
-          className="bg-transparent outline-none w-full ml-2 text-sm text-gray-700 placeholder-gray-400"
+          className="bg-transparent outline-none w-full ml-3 text-sm font-medium text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500"
         />
         {query.length > 0 && (
           <button
             onClick={clearSearch}
-            className="w-5 h-5 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer shrink-0"
+            className="w-6 h-6 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer shrink-0 ml-2"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-4 h-4" />
           </button>
         )}
       </div>
 
       {/* Suggestions dropdown */}
       {showDropdown && (
-        <ul className="absolute top-full left-0 w-[350px] mt-1.5 bg-white rounded-lg shadow-xl overflow-hidden border border-gray-100">
+        <ul className="absolute top-full left-0 w-full mt-2 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden border border-zinc-100 dark:border-zinc-800/50">
           {suggestions.map((result, idx) => (
             <li
               key={idx}
               onClick={() => handleSelect(result)}
-              className="px-4 py-3 cursor-pointer hover:bg-indigo-50 border-b border-gray-50 last:border-0 transition-colors"
+              className="px-5 py-3.5 cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-500/10 border-b border-zinc-50 dark:border-zinc-800/50 last:border-0 transition-colors"
             >
-              <div className="flex items-start gap-2.5">
+              <div className="flex items-start gap-3">
                 {result.kind === "place" ? (
                   <Building2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                 ) : (
                   <MapPin className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
                 )}
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-semibold text-zinc-800 truncate">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate">
                       {result.streetName}
                     </p>
                     {result.source === "mapbox" && (
-                      <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-indigo-500 bg-indigo-50 rounded px-1 py-0.5">
+                      <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-500/20 rounded-md px-1.5 py-0.5">
                         Exacta
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-zinc-400 truncate">{result.subtitle}</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate mt-0.5">{result.subtitle}</p>
                 </div>
               </div>
             </li>
