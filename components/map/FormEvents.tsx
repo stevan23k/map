@@ -17,7 +17,7 @@ export default function FormEvents() {
     const emitCreateEvent = useSocketStore(state => state.emitCreateEvent);
     const emitUpdateEvent = useSocketStore(state => state.emitUpdateEvent);
     const emitDeleteEvent = useSocketStore(state => state.emitDeleteEvent);
-    
+
     const [selectedIcon, setSelectedIcon] = useState<string>("Map");
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -28,7 +28,7 @@ export default function FormEvents() {
     const [isInputFocused, setIsInputFocused] = useState(false);
 
     const { setPendingFlyTo, mapCenter } = useRouteStore();
-    
+
     // Cleanup when closing form
     useEffect(() => {
         if (!isEventFormOpen) {
@@ -101,7 +101,7 @@ export default function FormEvents() {
                 icon: selectedIcon
             };
 
-            const response = selectedEvent 
+            const response = selectedEvent
                 ? await emitUpdateEvent(selectedEvent.id, eventData)
                 : await emitCreateEvent(eventData);
 
@@ -270,8 +270,8 @@ export default function FormEvents() {
                             {selectedEvent ? 'Editar evento' : 'Crear evento'}
                         </CardTitle>
                         <CardDescription>
-                            {selectedEvent 
-                                ? 'Modifica los campos necesarios para actualizar el evento.' 
+                            {selectedEvent
+                                ? 'Modifica los campos necesarios para actualizar el evento.'
                                 : 'Completa los campos para añadir un nuevo evento al mapa.'}
                         </CardDescription>
                     </CardHeader>
@@ -369,7 +369,7 @@ export default function FormEvents() {
                                             </div>
                                         </div>
                                     )}
-                                    
+
                                     <div className="absolute -bottom-2 right-4 translate-y-full opacity-0 group-focus-within/input:opacity-100 transition-opacity">
                                         <span className="text-[9px] font-bold text-primary/60 bg-background px-2 py-0.5 rounded-full border border-primary/20 shadow-sm uppercase tracking-tighter">
                                             Buscando en Barranquilla...
