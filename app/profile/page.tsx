@@ -12,6 +12,12 @@ export default function Profile() {
     const { user } = useAuthStore();
     const router = useRouter();
 
+    useEffect(() => {
+        if (!user) {
+            router.push("/login");
+        }
+    }, [user, router]);
+
     return (
         <>
             <header className="w-full flex justify-center px-6">
