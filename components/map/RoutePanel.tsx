@@ -308,7 +308,7 @@ export default function RoutePanel() {
   // ─── Expanded panel ────────────────────────────────────────────────────────
   return (
     <div className="fixed bottom-0 sm:bottom-6 left-0 sm:left-6 z-20 w-full sm:w-[360px]">
-      <div className="bg-white rounded-t-3xl sm:rounded-xl shadow-lg border border-zinc-200 h-auto p-4 sm:p-4 pb-8 sm:pb-4">
+      <div className="bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700/60 h-auto p-4 sm:p-4 pb-8 sm:pb-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -374,14 +374,14 @@ export default function RoutePanel() {
                 <button
                   onClick={handleUseMyLocationForOrigin}
                   title="Usar mi ubicación"
-                  className="w-7 h-7 flex items-center justify-center rounded-full text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer shrink-0"
+                  className="w-7 h-7 flex items-center justify-center rounded-full text-zinc-400 dark:text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors cursor-pointer shrink-0"
                 >
                   <Crosshair className="w-4 h-4" />
                 </button>
                 {originWp && (
                   <button
                     onClick={() => removeWaypoint(0)}
-                    className="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-50 text-zinc-300 hover:text-red-500 transition-all cursor-pointer shrink-0"
+                    className="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-50 dark:hover:bg-red-500/10 text-zinc-300 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 transition-all cursor-pointer shrink-0"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -462,7 +462,7 @@ export default function RoutePanel() {
 
         {/* Add stop hint */}
         {hasWaypoints && (
-          <p className="text-indigo-600 text-xs font-medium flex items-center gap-1 mt-3 cursor-default select-none">
+          <p className="text-indigo-600 dark:text-indigo-400 text-xs font-medium flex items-center gap-1 mt-3 cursor-default select-none">
             <Plus className="w-3.5 h-3.5" />
             Toca el mapa para añadir parada
           </p>
@@ -470,16 +470,16 @@ export default function RoutePanel() {
 
         {/* Route summary */}
         {hasRoute && (
-          <div className="mt-3 pt-3 border-t border-zinc-100 flex items-center gap-5">
+          <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-700/60 flex items-center gap-5">
             <div className="flex items-center gap-1.5">
-              <Route className="w-4 h-4 text-indigo-600" />
-              <span className="text-base font-bold text-zinc-800">
+              <Route className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <span className="text-base font-bold text-zinc-800 dark:text-zinc-100">
                 {routeInfo.distance}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-indigo-600" />
-              <span className="text-base font-bold text-zinc-800">
+              <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <span className="text-base font-bold text-zinc-800 dark:text-zinc-100">
                 {routeInfo.duration}
               </span>
             </div>
@@ -488,10 +488,10 @@ export default function RoutePanel() {
 
         {/* Clear button */}
         {hasWaypoints && (
-          <div className="mt-3 pt-3 border-t border-zinc-100">
+          <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-700/60">
             <button
               onClick={clearRoute}
-              className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold text-zinc-500 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Limpiar ruta

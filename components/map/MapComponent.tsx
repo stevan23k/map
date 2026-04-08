@@ -25,8 +25,8 @@ type OSRMProfile = "driving" | "cycling" | "foot";
 
 const OSRM_ENDPOINTS: Record<OSRMProfile, string> = {
   driving: "https://routing.openstreetmap.de/routed-car/route/v1/driving",
-  cycling: "https://routing.openstreetmap.de/routed-bike/route/v1/driving",
-  foot: "https://routing.openstreetmap.de/routed-foot/route/v1/driving",
+  cycling: "https://routing.openstreetmap.de/routed-bike/route/v1/cycling",
+  foot: "https://routing.openstreetmap.de/routed-foot/route/v1/foot",
 };
 
 const MAPBOX_PROFILES: Record<OSRMProfile, string> = {
@@ -280,14 +280,11 @@ export default function MapComponent({ className }: MapComponentProps) {
 
         map.on("load", () => {
           console.log("Map fully loaded");
+          styleLoadedRef.current = true;
           setMapLoaded(true);
         });
 
         mapRef.current = map;
-
-        map.on("load", () => {
-          styleLoadedRef.current = true;
-        });
 
         // Geolocation for socket emission and local store
         if (navigator.geolocation) {
@@ -317,16 +314,17 @@ export default function MapComponent({ className }: MapComponentProps) {
           const lngLat: [number, number] = [e.lngLat.lng, e.lngLat.lat];
 
           // Add waypoint immediately with coords as placeholder label
+          // Capture the index AT add time (before the async resolves)
           useRouteStore.getState().addWaypoint(lngLat);
+          const capturedIdx = useRouteStore.getState().waypoints.length - 1;
 
-          // Resolve street name in background, then update the waypoint label
+          // Resolve street name in background, then update the correct waypoint
           reverseGeocode(lngLat).then((streetName) => {
             if (!streetName) return;
             const store = useRouteStore.getState();
-            const idx = store.waypoints.length - 1;
-            // Guard: waypoint must still exist and still show coords
-            if (idx >= 0) {
-              store.updateWaypointLngLat(idx, lngLat, streetName, streetName);
+            // Guard: waypoint must still exist at the captured index
+            if (capturedIdx >= 0 && capturedIdx < store.waypoints.length) {
+              store.updateWaypointLngLat(capturedIdx, lngLat, streetName, streetName);
             }
           });
         });
