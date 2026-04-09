@@ -42,18 +42,42 @@ git push origin feature/mi-cambio
 
 4 . Hacer la pr
 Luego en el momento de hacer la pr se debe verificar que la rama a la que apunta es la rama dev.
+
 - Mal:
-    <img width="1236" height="61" alt="2026-04-09-014755_hyprshot" src="https://github.com/user-attachments/assets/7939781b-5448-4073-bbeb-6ab02461838b" />
+  <img width="1236" height="61" alt="2026-04-09-014755_hyprshot" src="https://github.com/user-attachments/assets/7939781b-5448-4073-bbeb-6ab02461838b" />
 - Bien
-    <img width="1245" height="62" alt="2026-04-09-014914_hyprshot" src="https://github.com/user-attachments/assets/84e15990-beda-4ef3-aaec-b5aea4382ac3" />
+  <img width="1245" height="62" alt="2026-04-09-014914_hyprshot" src="https://github.com/user-attachments/assets/84e15990-beda-4ef3-aaec-b5aea4382ac3" />
+
+### Recomendaciones
+
+# 1. Actualizas dev desde remoto
+
+git checkout dev
+git pull origin dev
+
+# 2. Actualizas tu rama bugs
+
+git checkout bugs
+git merge dev
+
+# 3. Trabajas y haces commit
+
+git add .
+git commit -m "fix: error en login"
+
+# 4. Subes tu rama
+
+git push origin "el nombre de tu rama"
+
+# 5. PR: "tu rama" → bugs
 
 > [!TIP]
 > usar las carapteristicas de las pull request
-<img width="327" height="241" alt="2026-04-09-014926_hyprshot" src="https://github.com/user-attachments/assets/47da0efc-8c21-4c19-b289-5869a5b0d711" />
-<img width="348" height="452" alt="2026-04-09-015008_hyprshot" src="https://github.com/user-attachments/assets/b201cd78-95a2-40fd-b6fb-aaf8cfb98ba2" />
-
-
-
+> <img width="327" height="241" alt="2026-04-09-014926_hyprshot" src="https://github.com/user-attachments/assets/47da0efc-8c21-4c19-b289-5869a5b0d711" />
+> <img width="348" height="452" alt="2026-04-09-015008_hyprshot" src="https://github.com/user-attachments/assets/b201cd78-95a2-40fd-b6fb-aaf8cfb98ba2" />
+>
+> > > > > > > Stashed changes
+> > > > > > > 5d66e27 (como trabajar)
 
 > [!IMPORTANT]
 > Hacer un commit o push cada que tengan algo terminado, para que el resto de de desarrolladores pueda tener el cambio.
