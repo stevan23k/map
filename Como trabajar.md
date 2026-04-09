@@ -12,6 +12,9 @@ habrá una rama para el desarrollo, una para los bugs y otra para la versión fi
 - Bugs: La rama bugs recibirá todos los cambios relacionados a solución de errores esta rama tendrá prioridad se harán pull request, todos los días al final del día si hay commits con bugs solucionados.  
 
 
+4 . Hacer la pr
+Luego en el momento de hacer la pr se debe verificar que la rama a la que apunta es la rama dev.
+
 > [!IMPORTANT]
 > Hacer un commit o push cada que tengan algo terminado, para que el resto de de desarrolladores pueda tener el cambio.
 
