@@ -3,13 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Search, X, MapPin, Building2 } from "lucide-react";
 import { useRouteStore } from "@/store/routeStore";
-import {
-  hybridGeocode,
-  zoomForPlaceType,
-  rankByRelevance,
-  type GeoResult,
-  type GeocodingBias,
-} from "@/lib/geocoding";
+import { hybridGeocode, zoomForPlaceType, rankByRelevance, type GeoResult, type GeocodingBias } from "@/lib/geocoding";
 
 export default function GlobalSearchBar() {
   const [query, setQuery] = useState("");
@@ -29,10 +23,7 @@ export default function GlobalSearchBar() {
   // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setSuggestions([]);
         setIsFocused(false);
       }
@@ -42,12 +33,7 @@ export default function GlobalSearchBar() {
   }, []);
 
   // Cleanup abort controller on unmount
-  useEffect(
-    () => () => {
-      abortRef.current?.abort();
-    },
-    [],
-  );
+  useEffect(() => () => { abortRef.current?.abort(); }, []);
 
   const handleChange = useCallback(
     (text: string) => {
@@ -87,7 +73,7 @@ export default function GlobalSearchBar() {
         }
       }, 450);
     },
-    [], // no dependency on mapCenter — we read it from store.getState() at fire time
+    [] // no dependency on mapCenter — we read it from store.getState() at fire time
   );
 
   const handleSelect = (result: GeoResult) => {
@@ -136,7 +122,7 @@ export default function GlobalSearchBar() {
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => setIsFocused(true)}
           placeholder="Buscar en Barranquilla..."
-          className="bg-transparent outline-none w-[400px] ml-3 text-sm font-medium text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500"
+          className="bg-transparent outline-none w-full ml-3 text-sm font-medium text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500"
         />
         {query.length > 0 && (
           <button
@@ -150,7 +136,7 @@ export default function GlobalSearchBar() {
 
       {/* Suggestions dropdown */}
       {showDropdown && (
-        <ul className="absolute top-full left-0 w-full sm:w-[500px] mt-1.5 bg-white dark:bg-zinc-800 rounded-lg shadow-xl overflow-hidden border border-gray-100 dark:border-zinc-700 z-50">
+        <ul className="absolute top-full left-0 w-full sm:w-[350px] mt-1.5 bg-white dark:bg-zinc-800 rounded-lg shadow-xl overflow-hidden border border-gray-100 dark:border-zinc-700 z-50">
           {suggestions.map((result, idx) => (
             <li
               key={idx}
@@ -174,9 +160,7 @@ export default function GlobalSearchBar() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
-                    {result.subtitle}
-                  </p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate mt-0.5">{result.subtitle}</p>
                 </div>
               </div>
             </li>
